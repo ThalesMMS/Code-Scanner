@@ -1,0 +1,17 @@
+# Generated scan outputs
+output/*
+!output/.gitkeep
+output_script/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.idea/
+.vscode/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
