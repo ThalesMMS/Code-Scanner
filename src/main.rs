@@ -15,14 +15,19 @@ mod utils;
 
 use crate::cli::Args;
 use crate::project::is_single_project_root;
-use crate::scanner::process_project;
+use crate::scanner::{collect_loc_stats, process_project};
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use std::fs;
+use std::path::Path;
 
 fn main() -> Result<()> {
     // Parse CLI input and hydrate the Args struct with defaults and user flags.
     let args = Args::parse();
+
+    if let Some(loc_path) = &args.loc {
+        return run_loc_mode(loc_path, &args);
+    }
 
     // Fail fast if the input directory does not exist to avoid silent no-ops.
     if !args.input_dir.exists() {
@@ -98,4 +103,30 @@ fn print_banner(args: &Args) {
     println!("📍 Entrada: {:?}", args.input_dir);
     println!("📍 Saída:   {:?}", args.output_dir);
     println!();
+}
+
+fn run_loc_mode(loc_path: &Path, args: &Args) -> Result<()> {
+    if !loc_path.exists() {
+        bail!("Diretório para LOC não encontrado: {}", loc_path.display());
+    }
+
+    println!("📏 LOC mode");
+    println!("📍 Alvo: {}", loc_path.display());
+    if args.no_gitignore {
+        println!("⚠️  .gitignore desativado (--no-gitignore)");
+    }
+    let stats = collect_loc_stats(loc_path, args)?;
+    print_loc_summary(loc_path, &stats);
+    Ok(())
+}
+
+fn print_loc_summary(loc_path: &Path, stats: &crate::scanner::LocStats) {
+    println!();
+    println!("📊 RESUMO LOC");
+    println!("  📁 Alvo: {}", loc_path.display());
+    println!("  ✅ Arquivos processados: {}", stats.processed_files);
+    println!("  ⏭️  Arquivos ignorados: {}", stats.skipped_files);
+    println!("  🧮 Total de linhas: {}", stats.total_lines);
+    println!("  🔤 Total de caracteres: {}", stats.total_chars);
+    println!("  🤖 Tokens estimados: {}", stats.estimated_tokens);
 }

@@ -82,6 +82,106 @@ fn build_walker(project_path: &Path, args: &Args) -> Walk {
         .build()
 }
 
+// Collect totals for LOC/token estimation without writing any report files.
+pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
+    let config = load_config(project_path);
+    let walker = build_walker(project_path, args);
+    let mut stats = LocStats::default();
+
+    for result in walker {
+        match result {
+            Ok(entry) => {
+                let path = entry.path();
+
+                if path == project_path {
+                    continue;
+                }
+
+                let file_name = path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_lowercase();
+
+                if config.ignore_dirs.contains(&file_name) {
+                    continue;
+                }
+
+                if path.is_dir() {
+                    continue;
+                }
+
+                if config.ignore_files.contains(&file_name) {
+                    stats.skipped_files += 1;
+                    continue;
+                }
+
+                let ext = path
+                    .extension()
+                    .map(|e| e.to_string_lossy().to_string().to_lowercase())
+                    .unwrap_or_default();
+
+                if config.ignore_extensions.contains(&ext) {
+                    stats.skipped_files += 1;
+                    continue;
+                }
+
+                if !ext.is_empty() && !config.code_extensions.contains(&ext) {
+                    if !config.code_extensions.contains(&file_name) {
+                        stats.skipped_files += 1;
+                        continue;
+                    }
+                }
+
+                let metadata = match path.metadata() {
+                    Ok(m) => m,
+                    Err(_) => {
+                        stats.skipped_files += 1;
+                        continue;
+                    }
+                };
+
+                if metadata.len() > config.max_file_size {
+                    if args.verbose {
+                        println!("Ignorando {} (tamanho excessivo)", path.display());
+                    }
+                    stats.skipped_files += 1;
+                    continue;
+                }
+
+                if is_binary(path) {
+                    stats.skipped_files += 1;
+                    continue;
+                }
+
+                match fs::read_to_string(path) {
+                    Ok(content) => {
+                        stats.processed_files += 1;
+                        stats.total_lines += content.lines().count() as u64;
+                        stats.total_chars += content.chars().count() as u64;
+                    }
+                    Err(_) => {
+                        stats.skipped_files += 1;
+                        continue;
+                    }
+                }
+            }
+            Err(err) => {
+                if args.verbose {
+                    eprintln!("Erro ao ler entrada: {}", err);
+                }
+            }
+        }
+    }
+
+    stats.estimated_tokens = estimate_tokens(stats.total_chars);
+    Ok(stats)
+}
+
+fn estimate_tokens(total_chars: u64) -> u64 {
+    (total_chars + 3) / 4
+}
+
 fn write_header(output_file: &mut File, project_name: &str, _project_type: &str) -> Result<()> {
     // Simple header for the human-friendly report.
     writeln!(output_file)?;
@@ -318,4 +418,13 @@ fn write_summary(output_file: &mut File, stats: &ScanStats, processed_count: usi
 struct ScanStats {
     total_size: u64,
     skipped: u64,
+}
+
+#[derive(Default)]
+pub struct LocStats {
+    pub processed_files: u64,
+    pub skipped_files: u64,
+    pub total_lines: u64,
+    pub total_chars: u64,
+    pub estimated_tokens: u64,
 }

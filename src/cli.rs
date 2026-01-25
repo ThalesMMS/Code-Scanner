@@ -22,6 +22,10 @@ pub struct Args {
     #[arg(short, long, default_value = "./output")]
     pub output_dir: PathBuf,
 
+    /// LOC mode: compute a lines/tokens summary for the target path
+    #[arg(long, value_name = "PATH")]
+    pub loc: Option<PathBuf>,
+
     /// Ignore the project's .gitignore file
     #[arg(long)]
     pub no_gitignore: bool,
