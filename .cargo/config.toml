@@ -1,2 +1,3 @@
 [alias]
 loc = "run -- --loc"
+coverage = "llvm-cov --fail-under-lines 35"

@@ -7,16 +7,10 @@
 // Thales Matheus Mendonça Santos - November 2025
 //
 
-mod cli;
-mod config;
-mod project;
-mod scanner;
-mod utils;
-
-use crate::cli::Args;
-use crate::project::is_single_project_root;
-use crate::scanner::{collect_loc_stats, process_project};
-use crate::utils::format_size;
+use code_scanner::cli::Args;
+use code_scanner::project::is_single_project_root;
+use code_scanner::scanner::{collect_loc_stats, process_project, LocStats};
+use code_scanner::utils::format_size;
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use std::fs;
@@ -121,7 +115,7 @@ fn run_loc_mode(loc_path: &Path, args: &Args) -> Result<()> {
     Ok(())
 }
 
-fn print_loc_summary(loc_path: &Path, stats: &crate::scanner::LocStats) {
+fn print_loc_summary(loc_path: &Path, stats: &LocStats) {
     println!();
     println!("📊 LOC SUMMARY");
     println!("  📁 Target: {}", loc_path.display());

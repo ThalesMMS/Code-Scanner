@@ -58,9 +58,10 @@ Use LOC mode when you want a quick size summary without generating report files:
 cargo loc ./path/to/project
 ```
 
-Output includes total lines, total characters, a token estimate (chars/4), and the top 10 files by line count.
+Output includes total lines, total characters, a token estimate (chars/4), and the top 10 files by line count. Dotfiles are excluded from LOC counts unless you whitelist them by adding the filename (e.g., `.gitignore` or `gitignore`) to `code_extensions` in `.scanner-config.json`.
 
 ## Development (Rust)
 - Format: `cargo fmt`
 - Lint: `cargo clippy -- -D warnings`
 - Tests: `cargo test`
+- Coverage (install once with `cargo install cargo-llvm-cov`): `cargo coverage` (fails under 35% line coverage)
