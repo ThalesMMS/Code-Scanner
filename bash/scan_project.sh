@@ -13,7 +13,7 @@ DEFAULT_INPUT_DIR="$REPO_ROOT/input"
 DEFAULT_OUTPUT_DIR="$REPO_ROOT/output"
 
 ########################################
-# CONFIGURAÇÃO PRINCIPAL
+# MAIN CONFIGURATION
 ########################################
 
 TARGET_DIR="${TARGET_DIR:-$DEFAULT_INPUT_DIR}"
@@ -24,7 +24,7 @@ USE_GITIGNORE="${USE_GITIGNORE:-true}"
 VERBOSE="${VERBOSE:-false}"
 
 ########################################
-# LISTAS DE EXCLUSÃO
+# EXCLUSION LISTS
 ########################################
 
 IGNORE_FILES_BASE='.DS_Store|Thumbs.db|.env|.env.local|.env.production|.env.development|*.key|*.pem|*.p12|*.pfx|*.log|*.pid|*.seed|*.sqlite|*.sqlite3|*.db|desktop.ini|*.swp|*.swo|*~|.~lock.*|._*'
@@ -40,7 +40,7 @@ IGNORE_FILES_PATTERN="${IGNORE_FILES_BASE}${IGNORE_FILES_EXTRA:+|$IGNORE_FILES_E
 IGNORE_DIRS_PATTERN="${IGNORE_DIRS_BASE}${IGNORE_DIRS_EXTRA:+|$IGNORE_DIRS_EXTRA}"
 
 ########################################
-# EXTENSÕES E ARQUIVOS
+# EXTENSIONS AND FILES
 ########################################
 
 CODE_EXTS=(
@@ -67,7 +67,7 @@ CODE_EXTS=(
     "json" "yaml" "yml" "toml" "xml"
     "sh" "bash" "zsh" "fish"
 
-    # Outros
+    # Other
     "metal" "sql"
 )
 
@@ -128,12 +128,12 @@ CONFIG_FILES=(
     "*.xcodeproj" "*.xcworkspace" "*.xcscheme" "*.pbxproj"
     "Info.plist" "Entitlements.plist"
 
-    # Documentação
+    # Documentation
     "README*" "LICENSE*" ".gitignore" ".gitattributes"
 )
 
 ########################################
-# FUNÇÕES AUXILIARES
+# HELPER FUNCTIONS
 ########################################
 
 log_verbose() {
@@ -166,7 +166,7 @@ should_ignore_file() {
     local filepath="$1"
     local filename=$(basename "$filepath")
 
-    # Sempre ignore .DS_Store
+    # Always ignore .DS_Store
     if [[ "$filename" == ".DS_Store" ]]; then
         log_verbose "Ignoring $filename (system file)"
         return 0
@@ -295,7 +295,7 @@ detect_project_type() {
 }
 
 ########################################
-# FUNÇÃO PRINCIPAL DE PROCESSAMENTO
+# MAIN PROCESSING FUNCTION
 ########################################
 
 process_project() {
@@ -303,13 +303,13 @@ process_project() {
     local project_name="$2"
     local output_file="$3"
 
-    echo "  📁 Processando: $project_name"
+    echo "  📁 Processing: $project_name"
 
     local project_type=$(detect_project_type "$project_dir")
-    echo "    🔍 Tipo detectado: $project_type"
+    echo "    🔍 Detected type: $project_type"
 
     if [ -f "$project_dir/.gitignore" ] && [ "$USE_GITIGNORE" = "true" ]; then
-        echo "    📋 Usando .gitignore do projeto"
+        echo "    📋 Using project's .gitignore"
     fi
 
     : > "$output_file"
@@ -326,10 +326,10 @@ process_project() {
         echo "FOLDER STRUCTURE"
 
         if command -v tree >/dev/null 2>&1; then
-            tree -a -I "$IGNORE_DIRS_PATTERN|.DS_Store|._*" "$project_dir" 2>/dev/null || echo "Erro ao gerar árvore"
+            tree -a -I "$IGNORE_DIRS_PATTERN|.DS_Store|._*" "$project_dir" 2>/dev/null || echo "Error generating tree"
         else
             IFS='|' read -ra IGN_LIST <<< "$IGNORE_DIRS_PATTERN"
-            # head pode gerar SIGPIPE sob pipefail; ignore status não zero
+            # head may trigger SIGPIPE under pipefail; ignore non-zero status
             find "$project_dir" \
                 \( -type d \( $(printf -- '-name %q -o ' "${IGN_LIST[@]}") -false \) -prune \) -o \
                 \( -type f -name '.DS_Store' -prune \) -o \
@@ -352,7 +352,7 @@ process_project() {
     fi
 
     {
-        echo "📄 CONTEÚDO DOS ARQUIVOS"
+        echo "📄 FILE CONTENTS"
         echo "═══════════════════════════════════════════════════════════════"
         echo
     } >> "$output_file"
@@ -363,7 +363,7 @@ process_project() {
         \( -type d \( $(printf -- '-name %q -o ' "${IGN_LIST[@]}") -false \) -prune \) -o \
         -type f \( "${code_name_expr[@]}" \) -print 2>/dev/null | wc -l)
 
-    echo "    📊 Arquivos encontrados: $total_files"
+    echo "    📊 Files found: $total_files"
 
     find "$project_dir" \
         \( -type d \( $(printf -- '-name %q -o ' "${IGN_LIST[@]}") -false \) -prune \) -o \
@@ -397,14 +397,14 @@ process_project() {
                     {
                         echo "┌─────────────────────────────────────────────────────────────"
                         echo "│ 📄 $RELATIVE_PATH"
-                        echo "│ ⚠️  IGNORADO: Muito grande ($SIZE_FORMATTED > $(format_bytes $MAX_SIZE_BYTES))"
+                        echo "│ ⚠️  SKIPPED: Too large ($SIZE_FORMATTED > $(format_bytes $MAX_SIZE_BYTES))"
                         echo "└─────────────────────────────────────────────────────────────"
                         echo
                     } >> "$output_file"
                 else
                     {
                         echo "📄 $RELATIVE_PATH"
-                        echo "⚠️  IGNORADO: Muito grande ($SIZE_FORMATTED > $(format_bytes $MAX_SIZE_BYTES))"
+                        echo "⚠️  SKIPPED: Too large ($SIZE_FORMATTED > $(format_bytes $MAX_SIZE_BYTES))"
                         echo
                     } >> "$output_file"
                 fi
@@ -416,13 +416,13 @@ process_project() {
                 {
                     echo "┌─────────────────────────────────────────────────────────────"
                     echo "│ 📄 $RELATIVE_PATH"
-                    echo "│ 📊 Tamanho: $SIZE_FORMATTED"
+                    echo "│ 📊 Size: $SIZE_FORMATTED"
                     echo "├─────────────────────────────────────────────────────────────"
 
                     if file "$filepath" 2>/dev/null | grep -q "text\\|ASCII\\|UTF"; then
-                        tr -d '\r' < "$filepath" 2>/dev/null | nl -ba -w4 -s' │ ' || echo "│ [Erro ao ler]"
+                        tr -d '\r' < "$filepath" 2>/dev/null | nl -ba -w4 -s' │ ' || echo "│ [Error reading file]"
                     else
-                        echo "│ [Arquivo binário - omitido]"
+                        echo "│ [Binary file - omitted]"
                     fi
 
                     echo "└─────────────────────────────────────────────────────────────"
@@ -432,9 +432,9 @@ process_project() {
                 {
                     echo "📄 $RELATIVE_PATH"
                     if file "$filepath" 2>/dev/null | grep -q "text\\|ASCII\\|UTF"; then
-                        tr -d '\r' < "$filepath" 2>/dev/null || echo "[Erro ao ler]"
+                        tr -d '\r' < "$filepath" 2>/dev/null || echo "[Error reading file]"
                     else
-                        echo "[Arquivo binário - omitido]"
+                        echo "[Binary file - omitted]"
                     fi
                     echo
                 } >> "$output_file"
@@ -448,24 +448,24 @@ process_project() {
         {
             echo
             echo "═══════════════════════════════════════════════════════════════"
-            echo "📊 RESUMO"
+            echo "📊 SUMMARY"
             echo "═══════════════════════════════════════════════════════════════"
-            echo "  ✅ Arquivos processados: $file_count"
-            echo "  ⏭️  Arquivos ignorados: $skipped_count"
-            [ $gitignore_count -gt 0 ] && echo "  📋 Ignorados via .gitignore: $gitignore_count"
-            echo "  💾 Tamanho total: $(format_bytes $total_size)"
+            echo "  ✅ Files processed: $file_count"
+            echo "  ⏭️  Files skipped: $skipped_count"
+            [ $gitignore_count -gt 0 ] && echo "  📋 Skipped via .gitignore: $gitignore_count"
+            echo "  💾 Total size: $(format_bytes $total_size)"
             echo "═══════════════════════════════════════════════════════════════"
         } >> "$output_file"
     fi
 
-    echo "    ✅ Processados: $file_count"
-    echo "    ⏭️  Ignorados: $skipped_count"
+    echo "    ✅ Processed: $file_count"
+    echo "    ⏭️  Skipped: $skipped_count"
     [ $gitignore_count -gt 0 ] && echo "    📋 Via .gitignore: $gitignore_count"
-    echo "    💾 Tamanho: $(format_bytes $total_size)"
+    echo "    💾 Size: $(format_bytes $total_size)"
 }
 
 ########################################
-# SCRIPT PRINCIPAL
+# MAIN SCRIPT
 ########################################
 
 if [ -t 1 ] && [ -n "${TERM:-}" ] && command -v clear >/dev/null 2>&1; then
@@ -473,38 +473,38 @@ if [ -t 1 ] && [ -n "${TERM:-}" ] && command -v clear >/dev/null 2>&1; then
 fi
 
 echo "╔═══════════════════════════════════════════════════════════════╗"
-echo "║                SCANNER DE PROJETOS DE CÓDIGO                  ║"
+echo "║                CODE PROJECT SCANNER                           ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo
 
 if [ ! -d "$TARGET_DIR" ]; then
     if [ "$TARGET_DIR" = "$DEFAULT_INPUT_DIR" ]; then
         mkdir -p "$TARGET_DIR"
-        echo "ℹ️  O diretório padrão de entrada foi criado em: $TARGET_DIR"
-        echo "   Adicione os projetos que deseja analisar dentro desse diretório e execute o script novamente."
+        echo "ℹ️  The default input directory was created at: $TARGET_DIR"
+        echo "   Add the projects you want to scan inside this directory and run the script again."
         exit 0
     fi
-    echo "❌ Erro: O diretório de destino não foi encontrado em: $TARGET_DIR" >&2
+    echo "❌ Error: Target directory not found at: $TARGET_DIR" >&2
     exit 1
 fi
 
 mkdir -p "$OUTPUT_DIR"
 
-echo "📍 Configurações:"
-echo "   • Diretório alvo: $TARGET_DIR"
-echo "   • Diretório de saída: $OUTPUT_DIR"
-echo "   • Sufixo de saída: $OUTPUT_FILE_SUFFIX"
-echo "   • Tamanho máximo por arquivo: $(format_bytes $MAX_SIZE_BYTES)"
-echo "   • Usar .gitignore: $USE_GITIGNORE"
-echo "   • Modo verbose: $VERBOSE"
-[ -n "$IGNORE_FILES_EXTRA" ] && echo "   • Arquivos extra ignorados: $(echo "$IGNORE_FILES_EXTRA" | tr '|' ', ')"
-[ -n "$IGNORE_DIRS_EXTRA" ] && echo "   • Diretórios extra ignorados: $(echo "$IGNORE_DIRS_EXTRA" | tr '|' ', ')"
-[ -n "$IGNORE_PATHS" ] && echo "   • Caminhos relativos ignorados: $(echo "$IGNORE_PATHS" | tr '|' ', ')"
-[ -n "$IGNORE_ABSOLUTE_PATHS" ] && echo "   • Caminhos absolutos ignorados: $(echo "$IGNORE_ABSOLUTE_PATHS" | tr '|' ', ')"
+echo "📍 Configuration:"
+echo "   • Target directory: $TARGET_DIR"
+echo "   • Output directory: $OUTPUT_DIR"
+echo "   • Output filename suffix: $OUTPUT_FILE_SUFFIX"
+echo "   • Max file size: $(format_bytes $MAX_SIZE_BYTES)"
+echo "   • Use .gitignore: $USE_GITIGNORE"
+echo "   • Verbose mode: $VERBOSE"
+[ -n "$IGNORE_FILES_EXTRA" ] && echo "   • Extra ignored files: $(echo "$IGNORE_FILES_EXTRA" | tr '|' ', ')"
+[ -n "$IGNORE_DIRS_EXTRA" ] && echo "   • Extra ignored directories: $(echo "$IGNORE_DIRS_EXTRA" | tr '|' ', ')"
+[ -n "$IGNORE_PATHS" ] && echo "   • Ignored relative paths: $(echo "$IGNORE_PATHS" | tr '|' ', ')"
+[ -n "$IGNORE_ABSOLUTE_PATHS" ] && echo "   • Ignored absolute paths: $(echo "$IGNORE_ABSOLUTE_PATHS" | tr '|' ', ')"
 
 echo
 echo "═══════════════════════════════════════════════════════════════"
-echo "🚀 Iniciando varredura..."
+echo "🚀 Starting scan..."
 echo "═══════════════════════════════════════════════════════════════"
 
 project_count=0
@@ -514,51 +514,51 @@ for project_path in "$TARGET_DIR"/*; do
         project_name=$(basename "$project_path")
         output_file="$OUTPUT_DIR/${project_name}${OUTPUT_FILE_SUFFIX}"
 
-        echo "[Projeto $((++project_count))]"
+        echo "[Project $((++project_count))]"
         process_project "$project_path" "$project_name" "$output_file"
-        echo "  💾 Salvo: $output_file"
+        echo "  💾 Saved: $output_file"
         echo
     fi
 done
 
 if [ $project_count -eq 0 ]; then
-    echo "ℹ️  Nenhum subdiretório encontrado. Processando $TARGET_DIR como projeto único..."
+    echo "ℹ️  No subdirectories found. Processing $TARGET_DIR as a single project..."
     echo
 
     project_name=$(basename "$TARGET_DIR")
     output_file="$OUTPUT_DIR/${project_name}${OUTPUT_FILE_SUFFIX}"
 
     process_project "$TARGET_DIR" "$project_name" "$output_file"
-    echo "  💾 Salvo: $output_file"
+    echo "  💾 Saved: $output_file"
 fi
 
 echo
 echo "═══════════════════════════════════════════════════════════════"
-echo "✨ CONCLUÍDO!"
+echo "✨ DONE!"
 echo "═══════════════════════════════════════════════════════════════"
-echo "  📊 Total de projetos processados: $project_count"
-echo "  📂 Arquivos gerados em: $OUTPUT_DIR"
+echo "  📊 Total projects processed: $project_count"
+echo "  📂 Files generated in: $OUTPUT_DIR"
 echo "═══════════════════════════════════════════════════════════════"
 echo
 
-echo "📋 Arquivos gerados:"
-ls -lh "$OUTPUT_DIR"/*${OUTPUT_FILE_SUFFIX} 2>/dev/null || echo "  ⚠️  Nenhum arquivo gerado."
+echo "📋 Generated files:"
+ls -lh "$OUTPUT_DIR"/*${OUTPUT_FILE_SUFFIX} 2>/dev/null || echo "  ⚠️  No files generated."
 echo
 
-echo "💡 Variáveis de ambiente disponíveis:"
-echo "   • TARGET_DIR - Diretório a escanear"
-echo "   • OUTPUT_DIR - Diretório de saída"
-echo "   • OUTPUT_FILE_SUFFIX - Sufixo dos arquivos"
-echo "   • MAX_SIZE_BYTES - Tamanho máximo por arquivo"
-echo "   • USE_GITIGNORE - Usar .gitignore (true/false)"
-echo "   • VERBOSE - Modo detalhado (true/false)"
-echo "   • IGNORE_FILES_EXTRA - Arquivos adicionais a ignorar (|' separados)"
-echo "   • IGNORE_DIRS_EXTRA - Diretórios adicionais a ignorar (|' separados)"
-echo "   • IGNORE_PATHS - Caminhos relativos específicos a ignorar (|' separados)"
-echo "   • IGNORE_ABSOLUTE_PATHS - Caminhos absolutos específicos a ignorar (|' separados)"
+echo "💡 Available environment variables:"
+echo "   • TARGET_DIR - Target directory to scan"
+echo "   • OUTPUT_DIR - Output directory"
+echo "   • OUTPUT_FILE_SUFFIX - Output filename suffix"
+echo "   • MAX_SIZE_BYTES - Max file size"
+echo "   • USE_GITIGNORE - Use .gitignore (true/false)"
+echo "   • VERBOSE - Verbose mode (true/false)"
+echo "   • IGNORE_FILES_EXTRA - Additional files to ignore (pipe-separated)"
+echo "   • IGNORE_DIRS_EXTRA - Additional directories to ignore (pipe-separated)"
+echo "   • IGNORE_PATHS - Specific relative paths to ignore (pipe-separated)"
+echo "   • IGNORE_ABSOLUTE_PATHS - Specific absolute paths to ignore (pipe-separated)"
 echo
 
-echo "📌 Exemplos rápidos:"
+echo "📌 Quick examples:"
 echo "   IGNORE_ABSOLUTE_PATHS=\"$PWD/input/vendor/symfony|$PWD/input/libs/huge\" ./bash/scan_project.sh"
 echo "   IGNORE_PATHS=\"src/vendor/large-lib|tests/fixtures/big-data\" ./bash/scan_project.sh"
 echo "   USE_GITIGNORE=false VERBOSE=true TARGET_DIR=./custom OUTPUT_DIR=./reports ./bash/scan_project.sh"

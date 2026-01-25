@@ -25,6 +25,7 @@ cd Code-Scanner
 
 Run whichever scanner you prefer:
 - Rust: `cargo run` (defaults to `./input` and `./output`)
+  - LOC summary (repo alias): `cargo loc <path>` (same as `cargo run -- --loc <path>`)
 - Bash: `./bash/scan_project.sh`
 - Python (unified): `python3 python/unified_scanner.py`
 - Python (specialized):
@@ -43,11 +44,21 @@ Run whichever scanner you prefer:
 - Rust CLI flags mirror the defaults used by the scripts:
   - `cargo run -- --no-gitignore --verbose`
   - Override defaults with `--input-dir` and `--output-dir` when needed.
+  - LOC-only summary (no report files): `cargo loc ./path/to/project`
 
 ## Output
 Each project yields a text report in `output/`, typically named `<project>_project_code.txt` or `<project>_*_summary.txt` depending on the scanner. Large binaries, dependency folders, IDE files, and `.gitignore`d paths are skipped by default.
 
 Verbose mode (`--verbose` on the Rust CLI, `VERBOSE=true` in Bash) adds file headers with size, line numbers, and a final summary block. Without verbose, the report lists file paths followed by raw file contents.
+
+## LOC Mode (Rust)
+Use LOC mode when you want a quick size summary without generating report files:
+
+```bash
+cargo loc ./path/to/project
+```
+
+Output includes total lines, total characters, a token estimate (chars/4), and the top 10 files by line count.
 
 ## Development (Rust)
 - Format: `cargo fmt`

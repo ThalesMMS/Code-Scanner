@@ -42,7 +42,7 @@ pub fn detect_project_type(path: &Path) -> String {
         return "Flutter".to_string();
     }
 
-    "Genérico".to_string()
+    "Generic".to_string()
 }
 
 // Decide whether the provided path is already a single project root, so we avoid

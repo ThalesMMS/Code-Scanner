@@ -12,3 +12,6 @@ anyhow = "1.0" # Error handling
 chrono = "0.4" # Dates
 humansize = "2.1" # Byte formatting
 pathdiff = "0.2" # Relative paths
+
+[dev-dependencies]
+tempfile = "3"

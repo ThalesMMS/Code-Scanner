@@ -35,24 +35,24 @@ fn main() -> Result<()> {
         if is_default_input_dir(&args.input_dir) {
             fs::create_dir_all(&args.input_dir).with_context(|| {
                 format!(
-                    "Falha ao criar diretório de entrada: {}",
+                    "Failed to create input directory: {}",
                     args.input_dir.display()
                 )
             })?;
             println!(
-                "ℹ️  O diretório padrão de entrada foi criado em: {}",
+                "ℹ️  The default input directory was created at: {}",
                 args.input_dir.display()
             );
             println!(
-                "   Adicione os projetos que deseja analisar dentro desse diretório e execute novamente."
+                "   Add the projects you want to analyze inside this directory and run again."
             );
             return Ok(());
         }
-        bail!("Diretório de entrada não encontrado: {:?}", args.input_dir);
+        bail!("Input directory not found: {:?}", args.input_dir);
     }
 
     // Ensure the output directory exists so report writes do not panic later.
-    fs::create_dir_all(&args.output_dir).context("Falha ao criar diretório de saída")?;
+    fs::create_dir_all(&args.output_dir).context("Failed to create output directory")?;
 
     // Show a quick banner so users know what is being processed.
     print_banner(&args);
@@ -65,7 +65,7 @@ fn main() -> Result<()> {
         process_subdirectories(&args)?;
     }
 
-    println!("\n✨ Concluído!");
+    println!("\n✨ Completed!");
     Ok(())
 }
 
@@ -101,20 +101,20 @@ fn print_banner(args: &Args) {
     println!("╔═══════════════════════════════════════════════════════════════╗");
     println!("║               RUST CODE SCANNER (UNIFIED)                     ║");
     println!("╚═══════════════════════════════════════════════════════════════╝");
-    println!("📍 Entrada: {:?}", args.input_dir);
-    println!("📍 Saída:   {:?}", args.output_dir);
+    println!("📍 Input: {:?}", args.input_dir);
+    println!("📍 Output: {:?}", args.output_dir);
     println!();
 }
 
 fn run_loc_mode(loc_path: &Path, args: &Args) -> Result<()> {
     if !loc_path.exists() {
-        bail!("Diretório para LOC não encontrado: {}", loc_path.display());
+        bail!("Directory for LOC not found: {}", loc_path.display());
     }
 
     println!("📏 LOC mode");
-    println!("📍 Alvo: {}", loc_path.display());
+    println!("📍 Target: {}", loc_path.display());
     if args.no_gitignore {
-        println!("⚠️  .gitignore desativado (--no-gitignore)");
+        println!("⚠️  .gitignore disabled (--no-gitignore)");
     }
     let stats = collect_loc_stats(loc_path, args)?;
     print_loc_summary(loc_path, &stats);
@@ -123,24 +123,25 @@ fn run_loc_mode(loc_path: &Path, args: &Args) -> Result<()> {
 
 fn print_loc_summary(loc_path: &Path, stats: &crate::scanner::LocStats) {
     println!();
-    println!("📊 RESUMO LOC");
-    println!("  📁 Alvo: {}", loc_path.display());
-    println!("  ✅ Arquivos processados: {}", stats.processed_files);
-    println!("  ⏭️  Arquivos ignorados: {}", stats.skipped_files);
-    println!("  🧮 Total de linhas: {}", stats.total_lines);
-    println!("  🔤 Total de caracteres: {}", stats.total_chars);
-    println!("  🤖 Tokens estimados: {}", stats.estimated_tokens);
+    println!("📊 LOC SUMMARY");
+    println!("  📁 Target: {}", loc_path.display());
+    println!("  ✅ Files processed: {}", stats.processed_files);
+    println!("  ⏭️  Files skipped: {}", stats.skipped_files);
+    println!("  🧮 Total lines: {}", stats.total_lines);
+    println!("  🔤 Total characters: {}", stats.total_chars);
+    println!("  🤖 Estimated tokens: {}", stats.estimated_tokens);
     println!();
-    println!("📈 TOP 10 MAIORES ARQUIVOS");
+    println!("📈 TOP 10 FILES WITH MOST LINES");
     if stats.largest_files.is_empty() {
-        println!("  (nenhum arquivo contabilizado)");
+        println!("  (no files counted)");
         return;
     }
     for (index, entry) in stats.largest_files.iter().enumerate() {
         println!(
-            "  {:>2}. {} ({})",
+            "  {:>2}. {} ({} lines, {})",
             index + 1,
             entry.path.display(),
+            entry.lines,
             format_size(entry.size)
         );
     }

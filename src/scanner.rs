@@ -32,11 +32,11 @@ pub fn process_project(project_path: &Path, output_dir: &Path, args: &Args) -> R
     let config = load_config(project_path);
 
     // Visible progress helps when scanning multiple folders.
-    println!("📦 Processando: {} ({})", project_name, project_type);
+    println!("📦 Processing: {} ({})", project_name, project_type);
 
     let mut output_file = File::create(&output_file_path).with_context(|| {
         format!(
-            "Falha ao criar arquivo de saída: {}",
+            "Failed to create output file: {}",
             output_file_path.display()
         )
     })?;
@@ -48,12 +48,12 @@ pub fn process_project(project_path: &Path, output_dir: &Path, args: &Args) -> R
     )?;
 
     // Walk the file system with the configured filters and collect files to dump.
-    let walker = build_walker(project_path, args);
+    let walker = build_walker(project_path, args, &config);
     let (mut valid_files, mut stats) =
         collect_files(project_path, &config, args, walker, &mut output_file)?;
     valid_files.sort();
 
-    writeln!(output_file, "\n📄 CONTEÚDO DOS ARQUIVOS")?;
+    writeln!(output_file, "\n📄 FILE CONTENTS")?;
     writeln!(
         output_file,
         "═══════════════════════════════════════════════════════════════"
@@ -70,22 +70,34 @@ pub fn process_project(project_path: &Path, output_dir: &Path, args: &Args) -> R
         write_summary(&mut output_file, &stats, valid_files.len())?;
     }
 
-    println!("  ✅ Salvo em: {}", output_file_path.display());
+    println!("  ✅ Saved to: {}", output_file_path.display());
     Ok(())
 }
 
-fn build_walker(project_path: &Path, args: &Args) -> Walk {
+fn build_walker(project_path: &Path, args: &Args, config: &ProjectConfig) -> Walk {
+    let ignore_dirs = config.ignore_dirs.clone();
     // Build a walker that respects .gitignore unless the user disabled it.
     WalkBuilder::new(project_path)
         .git_ignore(!args.no_gitignore)
+        .require_git(false)
         .hidden(false)
+        .filter_entry(move |entry| {
+            if entry.depth() == 0 {
+                return true;
+            }
+            if entry.path().is_dir() {
+                let name = entry.file_name().to_string_lossy().to_lowercase();
+                return !ignore_dirs.contains(&name);
+            }
+            true
+        })
         .build()
 }
 
 // Collect totals for LOC/token estimation without writing any report files.
 pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
     let config = load_config(project_path);
-    let walker = build_walker(project_path, args);
+    let walker = build_walker(project_path, args, &config);
     let mut stats = LocStats::default();
 
     for result in walker {
@@ -144,7 +156,7 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
 
                 if size > config.max_file_size {
                     if args.verbose {
-                        println!("Ignorando {} (tamanho excessivo)", path.display());
+                        println!("Ignoring {} (excessive size)", path.display());
                     }
                     stats.skipped_files += 1;
                     continue;
@@ -159,10 +171,12 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
                     Ok(content) => {
                         let relative_path = diff_paths(path, project_path)
                             .unwrap_or_else(|| path.to_path_buf());
+                        let line_count = content.lines().count() as u64;
+                        let char_count = content.chars().count() as u64;
                         stats.processed_files += 1;
-                        stats.total_lines += content.lines().count() as u64;
-                        stats.total_chars += content.chars().count() as u64;
-                        record_largest_file(&mut stats, relative_path, size);
+                        stats.total_lines += line_count;
+                        stats.total_chars += char_count;
+                        record_top_loc_file(&mut stats, relative_path, line_count, size);
                     }
                     Err(_) => {
                         stats.skipped_files += 1;
@@ -172,7 +186,7 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
             }
             Err(err) => {
                 if args.verbose {
-                    eprintln!("Erro ao ler entrada: {}", err);
+                    eprintln!("Error reading input: {}", err);
                 }
             }
         }
@@ -186,11 +200,13 @@ fn estimate_tokens(total_chars: u64) -> u64 {
     (total_chars + 3) / 4
 }
 
-fn record_largest_file(stats: &mut LocStats, path: PathBuf, size: u64) {
-    stats.largest_files.push(LocFileEntry { path, size });
+fn record_top_loc_file(stats: &mut LocStats, path: PathBuf, lines: u64, size: u64) {
     stats
         .largest_files
-        .sort_by(|a, b| b.size.cmp(&a.size));
+        .push(LocFileEntry { path, lines, size });
+    stats
+        .largest_files
+        .sort_by(|a, b| b.lines.cmp(&a.lines));
     if stats.largest_files.len() > 10 {
         stats.largest_files.truncate(10);
     }
@@ -287,7 +303,7 @@ fn collect_files(
                 // Enforce max file size to keep output manageable.
                 if metadata.len() > config.max_file_size {
                     if args.verbose {
-                        println!("Ignorando {} (tamanho excessivo)", relative_path.display());
+                        println!("Ignoring {} (excessive size)", relative_path.display());
                     }
                     stats.skipped += 1;
                     continue;
@@ -307,7 +323,7 @@ fn collect_files(
             }
             Err(err) => {
                 if args.verbose {
-                    eprintln!("Erro ao ler entrada: {}", err);
+                    eprintln!("Error reading input: {}", err);
                 }
             }
         }
@@ -328,7 +344,7 @@ fn write_file_contents(
         let relative_str = relative_path.to_string_lossy();
         let size = path
             .metadata()
-            .with_context(|| format!("Falha ao ler metadata de {}", relative_path.display()))?
+            .with_context(|| format!("Failed to read metadata of {}", relative_path.display()))?
             .len();
 
         if args.verbose {
@@ -338,7 +354,7 @@ fn write_file_contents(
                 "┌─────────────────────────────────────────────────────────────"
             )?;
             writeln!(output_file, "│ 📄 {}", relative_str)?;
-            writeln!(output_file, "│ 📊 Tamanho: {}", format_size(size))?;
+            writeln!(output_file, "│ 📊 Size: {}", format_size(size))?;
             writeln!(
                 output_file,
                 "├─────────────────────────────────────────────────────────────"
@@ -404,20 +420,20 @@ fn write_summary(output_file: &mut File, stats: &ScanStats, processed_count: usi
         output_file,
         "\n═══════════════════════════════════════════════════════════════"
     )?;
-    writeln!(output_file, "📊 RESUMO")?;
+    writeln!(output_file, "📊 SUMMARY")?;
     writeln!(
         output_file,
-        "  ✅ Arquivos processados: {}",
+        "  ✅ Files processed: {}",
         processed_count
     )?;
     writeln!(
         output_file,
-        "  ⏭️  Arquivos ignorados (estimado): {}",
+        "  ⏭️  Files skipped (estimated): {}",
         stats.skipped
     )?;
     writeln!(
         output_file,
-        "  💾 Tamanho total do conteúdo: {}",
+        "  💾 Total content size: {}",
         format_size(stats.total_size)
     )?;
     writeln!(
@@ -446,5 +462,49 @@ pub struct LocStats {
 
 pub struct LocFileEntry {
     pub path: PathBuf,
+    pub lines: u64,
     pub size: u64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::collect_loc_stats;
+    use crate::cli::Args;
+    use std::fs;
+    use std::path::PathBuf;
+    use tempfile::tempdir;
+
+    #[test]
+    fn collect_loc_stats_counts_lines_and_skips_ignored() {
+        let dir = tempdir().expect("temp dir");
+        let root = dir.path();
+
+        fs::write(root.join("main.rs"), "line1\nline2\nline3\n").expect("write main");
+        fs::write(root.join("notes.txt"), "a\nb\n").expect("write notes");
+        fs::write(root.join("yarn.lock"), "lock").expect("write lock");
+        fs::write(root.join("image.png"), [137u8, 80, 78, 71]).expect("write png");
+        fs::write(root.join("binary.rs"), [0u8, 1, 2]).expect("write binary");
+
+        let ignored_dir = root.join("node_modules");
+        fs::create_dir_all(&ignored_dir).expect("create node_modules");
+        fs::write(ignored_dir.join("ignored.js"), "ignored\n").expect("write ignored");
+
+        let args = Args {
+            input_dir: PathBuf::from("."),
+            output_dir: PathBuf::from("."),
+            loc: None,
+            no_gitignore: true,
+            verbose: false,
+        };
+
+        let stats = collect_loc_stats(root, &args).expect("loc stats");
+
+        assert_eq!(stats.processed_files, 2);
+        assert_eq!(stats.skipped_files, 3);
+        assert_eq!(stats.total_lines, 5);
+        assert_eq!(stats.total_chars, 22);
+        assert_eq!(stats.estimated_tokens, 6);
+        assert_eq!(stats.largest_files[0].lines, 3);
+        assert_eq!(stats.largest_files[1].lines, 2);
+    }
 }
