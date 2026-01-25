@@ -16,6 +16,7 @@ mod utils;
 use crate::cli::Args;
 use crate::project::is_single_project_root;
 use crate::scanner::{collect_loc_stats, process_project};
+use crate::utils::format_size;
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use std::fs;
@@ -129,4 +130,18 @@ fn print_loc_summary(loc_path: &Path, stats: &crate::scanner::LocStats) {
     println!("  🧮 Total de linhas: {}", stats.total_lines);
     println!("  🔤 Total de caracteres: {}", stats.total_chars);
     println!("  🤖 Tokens estimados: {}", stats.estimated_tokens);
+    println!();
+    println!("📈 TOP 10 MAIORES ARQUIVOS");
+    if stats.largest_files.is_empty() {
+        println!("  (nenhum arquivo contabilizado)");
+        return;
+    }
+    for (index, entry) in stats.largest_files.iter().enumerate() {
+        println!(
+            "  {:>2}. {} ({})",
+            index + 1,
+            entry.path.display(),
+            format_size(entry.size)
+        );
+    }
 }

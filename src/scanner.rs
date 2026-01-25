@@ -140,8 +140,9 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
                         continue;
                     }
                 };
+                let size = metadata.len();
 
-                if metadata.len() > config.max_file_size {
+                if size > config.max_file_size {
                     if args.verbose {
                         println!("Ignorando {} (tamanho excessivo)", path.display());
                     }
@@ -156,9 +157,12 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
 
                 match fs::read_to_string(path) {
                     Ok(content) => {
+                        let relative_path = diff_paths(path, project_path)
+                            .unwrap_or_else(|| path.to_path_buf());
                         stats.processed_files += 1;
                         stats.total_lines += content.lines().count() as u64;
                         stats.total_chars += content.chars().count() as u64;
+                        record_largest_file(&mut stats, relative_path, size);
                     }
                     Err(_) => {
                         stats.skipped_files += 1;
@@ -180,6 +184,16 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
 
 fn estimate_tokens(total_chars: u64) -> u64 {
     (total_chars + 3) / 4
+}
+
+fn record_largest_file(stats: &mut LocStats, path: PathBuf, size: u64) {
+    stats.largest_files.push(LocFileEntry { path, size });
+    stats
+        .largest_files
+        .sort_by(|a, b| b.size.cmp(&a.size));
+    if stats.largest_files.len() > 10 {
+        stats.largest_files.truncate(10);
+    }
 }
 
 fn write_header(output_file: &mut File, project_name: &str, _project_type: &str) -> Result<()> {
@@ -427,4 +441,10 @@ pub struct LocStats {
     pub total_lines: u64,
     pub total_chars: u64,
     pub estimated_tokens: u64,
+    pub largest_files: Vec<LocFileEntry>,
+}
+
+pub struct LocFileEntry {
+    pub path: PathBuf,
+    pub size: u64,
 }
