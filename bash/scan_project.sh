@@ -67,7 +67,8 @@ CODE_EXTS=(
     "json" "yaml" "yml" "toml" "xml"
     "sh" "bash" "zsh" "fish"
 
-    # Other
+    # Data / Other
+    "csv" "tsv"
     "metal" "sql"
 )
 

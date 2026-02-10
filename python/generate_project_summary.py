@@ -31,6 +31,7 @@ CODE_EXTENSIONS = {
     ".mjs",
     ".puml",
     ".mermaid",
+    ".csv",
 }
 
 # Specific root files to include content from (if not in ignore list)

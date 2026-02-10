@@ -70,6 +70,7 @@ impl Default for ProjectConfig {
                     "sql",
                     "txt",
                     "tex",
+                    "csv",
                     "dockerfile",
                     "makefile",
                     "ipynb",

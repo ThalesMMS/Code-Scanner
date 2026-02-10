@@ -26,6 +26,7 @@ CODE_EXTENSIONS = {
     ".sh",
     ".bash",
     "Pipfile",
+    ".csv",
 }
 
 # Specific root files to include content from (if not in ignore list)

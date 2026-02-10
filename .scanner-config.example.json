@@ -7,7 +7,8 @@
     ".tsx",
     ".java",
     ".rs",
-    ".go"
+    ".go",
+    ".csv"
   ],
   "ignore_dirs": [
     "node_modules",

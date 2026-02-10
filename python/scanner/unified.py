@@ -116,6 +116,7 @@ class ConfigLoader:
             ".toml",
             ".sh",
             ".bash",
+            ".csv",
         }
 
         config.config_files = {

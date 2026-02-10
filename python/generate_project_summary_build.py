@@ -22,6 +22,7 @@ CODE_EXTENSIONS = {
     ".sh",
     ".bash",
     ".cfg",
+    ".csv",
 }
 
 # Specific root files to include content from (if not in ignore list)
