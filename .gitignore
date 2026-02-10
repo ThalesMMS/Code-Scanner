@@ -8,10 +8,6 @@ output_script/
 input/*
 !input/.gitkeep
 
-# Python caches
-/python/__pycache__/
-/python/scanner/__pycache__/
-
 # Logs and temp files
 *.log
 *.tmp
