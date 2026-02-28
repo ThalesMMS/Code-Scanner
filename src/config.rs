@@ -149,6 +149,22 @@ impl ProjectConfig {
             self.max_file_size = overrides.max_file_size;
         }
     }
+
+    // Remove specified extensions from code_extensions
+    pub fn ignore_extensions(&mut self, extensions_to_ignore: &[String]) {
+        for ext in extensions_to_ignore {
+            // Remove with or without leading dot
+            let ext_clean = if ext.starts_with('.') {
+                ext.to_string()
+            } else {
+                format!(".{}", ext)
+            };
+            
+            self.code_extensions.remove(&ext_clean);
+            self.code_extensions.remove(&ext_clean[1..].to_string()); // without dot
+            self.ignore_extensions.insert(ext_clean);
+        }
+    }
 }
 
 pub fn load_config(project_path: &Path) -> ProjectConfig {

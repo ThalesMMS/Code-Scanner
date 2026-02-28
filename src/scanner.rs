@@ -29,7 +29,12 @@ pub fn process_project(project_path: &Path, output_dir: &Path, args: &Args) -> R
 
     let output_file_path = output_dir.join(format!("{}_project_code.txt", project_name));
     let project_type = detect_project_type(project_path);
-    let config = load_config(project_path);
+    let mut config = load_config(project_path);
+    
+    // Apply CLI ignore arguments
+    if !args.ignore.is_empty() {
+        config.ignore_extensions(&args.ignore);
+    }
 
     // Visible progress helps when scanning multiple folders.
     println!("📦 Processing: {} ({})", project_name, project_type);
@@ -96,7 +101,13 @@ fn build_walker(project_path: &Path, args: &Args, config: &ProjectConfig) -> Wal
 
 // Collect totals for LOC/token estimation without writing any report files.
 pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
-    let config = load_config(project_path);
+    let mut config = load_config(project_path);
+    
+    // Apply CLI ignore arguments
+    if !args.ignore.is_empty() {
+        config.ignore_extensions(&args.ignore);
+    }
+    
     let walker = build_walker(project_path, args, &config);
     let mut stats = LocStats::default();
 
