@@ -1,6 +1,6 @@
 # Code Scanner
 
-Bundle a codebase into a single text report for audits, code reviews, and LLM prompts. This repository ships two independent scanners: a Rust CLI and a Bash script. Pick the one that fits your environment—no wrapper CLI required.
+Bundle a codebase into a single text report for audits, code reviews, and LLM prompts. This repository ships two independent scanners: a **Rust CLI** (compiled binary, LOC mode, CLI flags) and a **Bash script** (no Rust toolchain required). Pick the one that fits your environment—no wrapper CLI required.
 
 ## 30-second quickstart
 
@@ -25,7 +25,7 @@ TARGET_DIR=../my-project OUTPUT_DIR=./output ./bash/scan_project.sh
 
 ## What you get
 - A plain-text bundle in `output/`, typically named `<project>_project_code.txt`
-- A fast LOC-only summary via `cargo loc <path>`
+- A fast LOC-only summary (see [LOC mode](#loc-mode-rust))
 - Optional verbose mode with file sizes, line numbers, and a final summary block
 - Default support for `.gitignore`, common dependency folders, and large-file skipping
 
@@ -39,10 +39,6 @@ Example LOC output from this repository (`cargo loc .`):
   🔤 Total characters: 59879
   🤖 Estimated tokens: 14970
 ```
-
-## Which scanner should I use?
-- **Rust CLI**: best if you want a compiled tool, LOC mode, and CLI flags.
-- **Bash scanner**: best if you want a single script with no Rust toolchain required.
 
 ## What's inside
 - `src/` – Rust CLI that walks projects, respects `.gitignore`, and writes combined reports.
