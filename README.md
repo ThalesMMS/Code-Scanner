@@ -14,7 +14,7 @@ Scan a project with the Rust CLI:
 ```bash
 cargo run -- --input-dir ../my-project --output-dir ./output
 # quick size summary only:
-cargo loc ../my-project
+cargo run -- --loc ../my-project
 ```
 
 Or scan the same project with the Bash script:
@@ -29,7 +29,7 @@ TARGET_DIR=../my-project OUTPUT_DIR=./output ./bash/scan_project.sh
 - Optional verbose mode with file sizes, line numbers, and a final summary block
 - Default support for `.gitignore`, common dependency folders, and large-file skipping
 
-Example LOC output from this repository (`cargo loc .`):
+Example LOC output from this repository (`cargo run -- --loc .`):
 Sample output only; values will vary by commit.
 
 ```text
@@ -70,7 +70,7 @@ cargo run
 - Rust CLI flags mirror the defaults used by the scripts:
   - `cargo run -- --no-gitignore --verbose`
   - Override defaults with `--input-dir` and `--output-dir` when needed.
-  - LOC-only summary (no report files): `cargo loc ./path/to/project`
+  - LOC-only summary (no report files): `cargo run -- --loc ./path/to/project`
 
 ## Output
 Each project yields a text report in `output/`, typically named `<project>_project_code.txt` or `<project>_*_summary.txt` depending on the scanner. Large binaries, dependency folders, IDE files, and `.gitignore`d paths are skipped by default.
@@ -81,7 +81,7 @@ Verbose mode (`--verbose` on the Rust CLI, `VERBOSE=true` in Bash) adds file hea
 Use LOC mode when you want a quick size summary without generating report files:
 
 ```bash
-cargo loc ./path/to/project
+cargo run -- --loc ./path/to/project
 ```
 
 Output includes total lines, total characters, a token estimate (chars/4), and the top 10 files by line count. Dotfiles are excluded from LOC counts unless you whitelist them by adding the filename (e.g., `.gitignore` or `gitignore`) to `code_extensions` in `.scanner-config.json`.
