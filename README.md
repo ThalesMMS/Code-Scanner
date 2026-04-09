@@ -30,6 +30,7 @@ TARGET_DIR=../my-project OUTPUT_DIR=./output ./bash/scan_project.sh
 - Default support for `.gitignore`, common dependency folders, and large-file skipping
 
 Example LOC output from this repository (`cargo loc .`):
+Sample output only; values will vary by commit.
 
 ```text
 📊 LOC SUMMARY
