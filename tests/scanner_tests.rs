@@ -25,6 +25,7 @@ fn collect_loc_stats_counts_lines_and_skips_ignored() {
         loc: None,
         no_gitignore: true,
         verbose: false,
+        ignore: vec![],
     };
 
     let stats = collect_loc_stats(root, &args).expect("loc stats");

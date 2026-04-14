@@ -46,7 +46,7 @@ Sample output only; values will vary by commit.
 - `bash/scan_project.sh` – Bash scanner with project-type detection, `.gitignore` support, and verbose/debug modes.
 - `input/` – Default drop-in directory for projects to scan (kept by `.gitkeep`).
 - `output/` – Generated reports (ignored except for `.gitkeep`).
-- `.scanner-config.example.json` – Example configuration shared by the scanners.
+- `.scanner-config.example.json` – Example Rust CLI project config for `.scanner-config.json`.
 
 ## Requirements
 - Rust CLI: Rust 1.70+ with Cargo.
@@ -63,14 +63,56 @@ cargo run
 ```
 
 ## Configuration
-- `.scanner-config.json` in the target project adjusts code extensions, ignore lists, and max file size (see `.scanner-config.example.json`).
-- Bash scanner environment examples:
-  - `USE_GITIGNORE=false ./bash/scan_project.sh`
-  - `TARGET_DIR=./my-project OUTPUT_DIR=./reports ./bash/scan_project.sh`
-- Rust CLI flags mirror the defaults used by the scripts:
-  - `cargo run -- --no-gitignore --verbose`
-  - Override defaults with `--input-dir` and `--output-dir` when needed.
-  - LOC-only summary (no report files): `cargo run -- --loc ./path/to/project`
+
+The two scanners are configured differently.
+
+### Rust CLI: `.scanner-config.json`
+
+Place an optional `.scanner-config.json` file in the **target project root** to override the Rust CLI defaults.
+
+Supported keys:
+- `code_extensions`: file extensions or exact filenames to include
+- `ignore_dirs`: directory names to skip
+- `ignore_files`: exact filenames to skip
+- `ignore_extensions`: file extensions to skip
+- `max_file_size`: maximum file size in bytes
+
+Important details verified in the current code:
+- Write extensions **without a leading dot** (`"rs"`, `"png"`, not `".rs"`, `".png"`).
+- `ignore_files` matches exact filenames such as `"package-lock.json"`.
+- The Rust CLI looks only for `.scanner-config.json`; the example file is a template you copy and adapt.
+
+Example:
+
+```json
+{
+  "code_extensions": ["rs", "toml", "md", "sh"],
+  "ignore_dirs": ["vendor", "generated"],
+  "ignore_files": ["pnpm-lock.yaml", ".DS_Store"],
+  "ignore_extensions": ["png", "jpg", "pdf"],
+  "max_file_size": 1048576
+}
+```
+
+Useful Rust CLI flags:
+- `cargo run -- --no-gitignore --verbose`
+- `cargo run -- --input-dir ./my-project --output-dir ./reports`
+- LOC-only summary (no report files): `cargo run -- --loc ./path/to/project`
+
+### Bash scanner: environment variables
+
+The Bash scanner does **not** read `.scanner-config.json`. Configure it with environment variables instead.
+
+Common examples:
+- `USE_GITIGNORE=false ./bash/scan_project.sh`
+- `TARGET_DIR=./my-project OUTPUT_DIR=./reports ./bash/scan_project.sh`
+- `IGNORE_PATHS="src/vendor|tests/fixtures" VERBOSE=true ./bash/scan_project.sh`
+
+Available Bash environment variables include:
+- `TARGET_DIR`, `OUTPUT_DIR`, `OUTPUT_FILE_SUFFIX`
+- `MAX_SIZE_BYTES`, `USE_GITIGNORE`, `VERBOSE`
+- `IGNORE_FILES_EXTRA`, `IGNORE_DIRS_EXTRA`
+- `IGNORE_PATHS`, `IGNORE_ABSOLUTE_PATHS`
 
 ## Output
 Each project yields a text report in `output/`, typically named `<project>_project_code.txt` or `<project>_*_summary.txt` depending on the scanner. Large binaries, dependency folders, IDE files, and `.gitignore`d paths are skipped by default.
