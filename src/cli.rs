@@ -35,6 +35,6 @@ pub struct Args {
     pub verbose: bool,
 
     /// File extensions to ignore (e.g., --ignore .ts .js .json)
-    #[arg(long, value_name = "EXT")]
+    #[arg(long, value_name = "EXT", num_args = 1..)]
     pub ignore: Vec<String>,
 }

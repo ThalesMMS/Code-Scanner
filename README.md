@@ -97,6 +97,7 @@ Example:
 Useful Rust CLI flags:
 - `cargo run -- --no-gitignore --verbose`
 - `cargo run -- --input-dir ./my-project --output-dir ./reports`
+- `cargo run -- --input-dir ./my-project --output-dir ./reports --ignore ts js json` excludes matching file extensions from scanning
 - LOC-only summary (no report files): `cargo run -- --loc ./path/to/project`
 
 ### Bash scanner: environment variables

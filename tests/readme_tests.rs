@@ -91,6 +91,51 @@ fn cli_accepts_loc_flag() {
     );
 }
 
+/// README documents: `cargo run -- --input-dir ./my-project --output-dir ./reports --ignore ts js json`
+/// Verify one --ignore flag accepts multiple extension values.
+#[test]
+fn cli_accepts_multiple_ignore_extensions_after_one_flag() {
+    let input = tempdir().expect("input temp dir");
+    let output_dir = tempdir().expect("output temp dir");
+    fs::write(input.path().join("main.rs"), "fn main() {}\n").expect("write main.rs");
+    fs::write(input.path().join("app.ts"), "const app = true;\n").expect("write app.ts");
+    fs::write(input.path().join("view.js"), "console.log('view');\n").expect("write view.js");
+    fs::write(input.path().join("data.json"), "{\"ok\": true}\n").expect("write data.json");
+
+    let status = Command::new(bin())
+        .arg("--input-dir")
+        .arg(input.path())
+        .arg("--output-dir")
+        .arg(output_dir.path())
+        .arg("--ignore")
+        .arg("ts")
+        .arg("js")
+        .arg("json")
+        .status()
+        .expect("run binary");
+
+    assert!(
+        status.success(),
+        "--ignore must accept multiple values after one flag"
+    );
+
+    let report_path = fs::read_dir(output_dir.path())
+        .expect("read output dir")
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .find(|path| path.extension().and_then(|ext| ext.to_str()) == Some("txt"))
+        .expect("scanner should write a report");
+    let report = fs::read_to_string(report_path).expect("read report");
+
+    assert!(
+        report.contains("main.rs"),
+        "non-ignored Rust file should still be included; got:\n{report}"
+    );
+    assert!(
+        !report.contains("app.ts") && !report.contains("view.js") && !report.contains("data.json"),
+        "ignored extensions must not appear in the report; got:\n{report}"
+    );
+}
+
 // ---------------------------------------------------------------------------
 // "What you get" — LOC summary labels
 // ---------------------------------------------------------------------------
