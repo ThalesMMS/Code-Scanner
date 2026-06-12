@@ -97,6 +97,9 @@ fn print_banner(args: &Args) {
     println!("╚═══════════════════════════════════════════════════════════════╝");
     println!("📍 Input: {:?}", args.input_dir);
     println!("📍 Output: {:?}", args.output_dir);
+    if let Some(max_lines) = args.max_output_lines {
+        println!("📄 Max output lines per file: {max_lines}");
+    }
     println!();
 }
 

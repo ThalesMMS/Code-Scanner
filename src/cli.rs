@@ -37,4 +37,8 @@ pub struct Args {
     /// File extensions to ignore (e.g., --ignore .ts .js .json)
     #[arg(long, value_name = "EXT", num_args = 1..)]
     pub ignore: Vec<String>,
+
+    /// Split output into multiple files after this many lines (never breaks mid source file)
+    #[arg(long, value_name = "LINES")]
+    pub max_output_lines: Option<u64>,
 }
