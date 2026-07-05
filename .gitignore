@@ -21,3 +21,5 @@ Thumbs.db
 .idea/
 .vscode/
 AGENTS.md
+/node_modules
+/ui/node_modules

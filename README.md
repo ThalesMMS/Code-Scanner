@@ -44,6 +44,7 @@ Sample output only; values will vary by commit.
 ## What's inside
 - `src/` – Rust CLI that walks projects, respects `.gitignore`, and writes combined reports.
 - `bash/scan_project.sh` – Bash scanner with project-type detection, `.gitignore` support, and verbose/debug modes.
+- `src-tauri/` + `ui/` – Optional Tauri 2 desktop UI for the Rust CLI (see below).
 - `input/` – Default drop-in directory for projects to scan (kept by `.gitkeep`).
 - `output/` – Generated reports (ignored except for `.gitkeep`).
 - `.scanner-config.example.json` – Example Rust CLI project config for `.scanner-config.json`.
@@ -51,6 +52,19 @@ Sample output only; values will vary by commit.
 ## Requirements
 - Rust CLI: Rust 1.70+ with Cargo.
 - Bash scanner: Bash 4+ on macOS/Linux with standard POSIX tools (`find`, `sed`, `awk`, `stat`, `nl`, `grep`, etc.).
+- Desktop UI: Node.js 18+ in addition to Rust (for the Tauri toolchain).
+
+## Desktop UI (Tauri 2)
+
+A native desktop app wraps the Rust CLI's scanning engine in a dark-themed UI with two modes — **Full Scan** (bundle a project into a report) and **LOC Summary** (quick line/token counts) — including folder pickers, a live options panel, and a results view with a "reveal in Finder" shortcut for saved reports.
+
+```bash
+npm install            # once, installs the Tauri CLI
+npm run tauri dev       # launch in dev mode
+npm run tauri build     # produce a distributable app bundle
+```
+
+The UI is plain TypeScript + CSS (no frontend framework) living in `ui/`, talking to two Tauri commands (`run_scan`, `run_loc`) defined in `src-tauri/src/main.rs` that call directly into the same `code_scanner` library used by the CLI.
 
 ## Default workflow
 If you prefer not to point at a project path directly, the repository also supports the original drop-in flow:

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Code Scanner</title>
+    <script type="module" crossorigin src="/assets/index-DEsu8HmE.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DTp34g3B.css">
+  </head>
+  <body>
+    <div class="titlebar" data-tauri-drag-region>
+      <div class="titlebar-brand" data-tauri-drag-region>
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name" data-tauri-drag-region>Code Scanner</span>
+      </div>
+      <button id="theme-toggle" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="4.2" />
+          <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7" stroke-linecap="round"/>
+        </svg>
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5Z" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <main class="app">
+      <nav class="mode-switch" role="tablist" aria-label="Scan mode">
+        <button class="mode-tab is-active" data-mode="scan" role="tab" aria-selected="true">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h9M4 12h16M4 19h9" stroke-linecap="round"/></svg>
+          Full Scan
+        </button>
+        <button class="mode-tab" data-mode="loc" role="tab" aria-selected="false">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v13M22 19H2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          LOC Summary
+        </button>
+        <div class="mode-tab-glider" aria-hidden="true"></div>
+      </nav>
+
+      <div class="layout">
+        <section class="card panel-form">
+          <!-- Full scan form -->
+          <form id="scan-form" class="panel" data-panel="scan">
+            <div class="field">
+              <label for="scan-input">Project folder</label>
+              <div class="path-row">
+                <input id="scan-input" type="text" placeholder="Select the folder you want to bundle…" autocomplete="off" spellcheck="false" required />
+                <button type="button" class="btn btn-ghost" data-browse="scan-input" data-kind="scan-input">Browse</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="scan-output">Output folder</label>
+              <div class="path-row">
+                <input id="scan-output" type="text" placeholder="Where should the report be saved?" autocomplete="off" spellcheck="false" required />
+                <button type="button" class="btn btn-ghost" data-browse="scan-output" data-kind="scan-output">Browse</button>
+              </div>
+            </div>
+
+            <details class="options" open>
+              <summary>Options</summary>
+              <div class="options-grid">
+                <label class="toggle">
+                  <input type="checkbox" id="scan-verbose" />
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                  <span class="toggle-label">Verbose (line numbers + summary)</span>
+                </label>
+                <label class="toggle">
+                  <input type="checkbox" id="scan-no-gitignore" />
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                  <span class="toggle-label">Ignore .gitignore rules</span>
+                </label>
+                <div class="field">
+                  <label for="scan-ignore">Extensions to exclude</label>
+                  <input id="scan-ignore" type="text" placeholder="e.g. png lock json" autocomplete="off" spellcheck="false" />
+                </div>
+                <div class="field">
+                  <label for="scan-max-lines">Split output after N lines</label>
+                  <input id="scan-max-lines" type="number" min="1" placeholder="No limit" />
+                </div>
+              </div>
+            </details>
+
+            <button type="submit" class="btn btn-primary btn-run" id="scan-run">
+              <span class="btn-label">Run Scan</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+          </form>
+
+          <!-- LOC form -->
+          <form id="loc-form" class="panel" data-panel="loc" hidden>
+            <div class="field">
+              <label for="loc-input">Project folder</label>
+              <div class="path-row">
+                <input id="loc-input" type="text" placeholder="Select the folder you want to measure…" autocomplete="off" spellcheck="false" required />
+                <button type="button" class="btn btn-ghost" data-browse="loc-input" data-kind="loc-input">Browse</button>
+              </div>
+            </div>
+
+            <details class="options" open>
+              <summary>Options</summary>
+              <div class="options-grid">
+                <label class="toggle">
+                  <input type="checkbox" id="loc-no-gitignore" />
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                  <span class="toggle-label">Ignore .gitignore rules</span>
+                </label>
+                <div class="field">
+                  <label for="loc-ignore">Extensions to exclude</label>
+                  <input id="loc-ignore" type="text" placeholder="e.g. png lock json" autocomplete="off" spellcheck="false" />
+                </div>
+              </div>
+            </details>
+
+            <button type="submit" class="btn btn-primary btn-run" id="loc-run">
+              <span class="btn-label">Analyze</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+          </form>
+        </section>
+
+        <section class="card panel-results" id="results">
+          <div class="empty-state" id="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+              <rect x="3.5" y="3.5" width="17" height="17" rx="4"/>
+              <path d="M8 9h8M8 13h8M8 17h4" stroke-linecap="round"/>
+            </svg>
+            <p>Results will show up here once you run a scan.</p>
+          </div>
+
+          <div class="error-banner" id="error-banner" hidden></div>
+
+          <!-- Scan results -->
+          <div class="results-body" id="scan-results" hidden>
+            <div class="results-header">
+              <div>
+                <div class="project-name" id="rs-project-name"></div>
+                <div class="project-type" id="rs-project-type"></div>
+              </div>
+            </div>
+            <div class="stat-grid">
+              <div class="stat-card">
+                <span class="stat-value" id="rs-processed">0</span>
+                <span class="stat-label">Files processed</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value" id="rs-skipped">0</span>
+                <span class="stat-label">Files skipped</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value" id="rs-size">0 B</span>
+                <span class="stat-label">Report size</span>
+              </div>
+            </div>
+            <div class="output-list-wrap">
+              <h3>Saved reports</h3>
+              <ul class="output-list" id="rs-paths"></ul>
+            </div>
+          </div>
+
+          <!-- LOC results -->
+          <div class="results-body" id="loc-results" hidden>
+            <div class="stat-grid stat-grid-5">
+              <div class="stat-card">
+                <span class="stat-value" id="loc-processed">0</span>
+                <span class="stat-label">Processed</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value" id="loc-skipped">0</span>
+                <span class="stat-label">Skipped</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value" id="loc-lines">0</span>
+                <span class="stat-label">Total lines</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-value" id="loc-chars">0</span>
+                <span class="stat-label">Characters</span>
+              </div>
+              <div class="stat-card stat-card-accent">
+                <span class="stat-value" id="loc-tokens">0</span>
+                <span class="stat-label">Est. tokens</span>
+              </div>
+            </div>
+            <div class="top-files-wrap">
+              <h3>Top files by line count</h3>
+              <ol class="top-files" id="loc-top-files"></ol>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+  </body>
+</html>

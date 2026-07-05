@@ -147,7 +147,7 @@ macro_rules! report_write {
 }
 
 // Orchestrates a full scan for a single project and writes the report.
-pub fn process_project(project_path: &Path, output_dir: &Path, args: &Args) -> Result<()> {
+pub fn process_project(project_path: &Path, output_dir: &Path, args: &Args) -> Result<ProcessOutcome> {
     let project_name = project_path
         .file_name()
         .unwrap_or_default()
@@ -188,7 +188,15 @@ pub fn process_project(project_path: &Path, output_dir: &Path, args: &Args) -> R
     }
 
     report.print_saved_paths();
-    Ok(())
+
+    Ok(ProcessOutcome {
+        project_name,
+        project_type,
+        output_paths: report.paths.clone(),
+        processed_files: valid_files.len(),
+        skipped_files: stats.skipped,
+        total_size: stats.total_size,
+    })
 }
 
 fn build_walker(project_path: &Path, args: &Args, config: &ProjectConfig) -> Walk {
@@ -571,6 +579,16 @@ fn write_summary(report: &mut OutputReport, stats: &ScanStats, processed_count: 
 struct ScanStats {
     total_size: u64,
     skipped: u64,
+}
+
+// Summary handed back to callers (CLI banner, GUI results panel) once a scan finishes.
+pub struct ProcessOutcome {
+    pub project_name: String,
+    pub project_type: String,
+    pub output_paths: Vec<PathBuf>,
+    pub processed_files: usize,
+    pub skipped_files: u64,
+    pub total_size: u64,
 }
 
 #[derive(Default)]
