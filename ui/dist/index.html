@@ -4,190 +4,234 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Code Scanner</title>
-    <script type="module" crossorigin src="/assets/index-DEsu8HmE.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DTp34g3B.css">
+    <script type="module" crossorigin src="/assets/index-D_RkW1rd.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bejubebw.css">
   </head>
   <body>
-    <div class="titlebar" data-tauri-drag-region>
-      <div class="titlebar-brand" data-tauri-drag-region>
-        <span class="brand-mark" aria-hidden="true"></span>
+    <div class="titlebar" data-tauri-drag-region="deep">
+      <div class="titlebar-brand" data-tauri-drag-region="deep">
+        <span class="brand-mark" aria-hidden="true" data-tauri-drag-region></span>
         <span class="brand-name" data-tauri-drag-region>Code Scanner</span>
       </div>
       <button id="theme-toggle" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">
         <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <circle cx="12" cy="12" r="4.2" />
-          <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7" stroke-linecap="round"/>
+          <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7" stroke-linecap="round" />
         </svg>
         <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5Z" stroke-linejoin="round"/>
+          <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5Z" stroke-linejoin="round" />
         </svg>
       </button>
     </div>
 
     <main class="app">
-      <nav class="mode-switch" role="tablist" aria-label="Scan mode">
-        <button class="mode-tab is-active" data-mode="scan" role="tab" aria-selected="true">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h9M4 12h16M4 19h9" stroke-linecap="round"/></svg>
-          Full Scan
-        </button>
-        <button class="mode-tab" data-mode="loc" role="tab" aria-selected="false">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v13M22 19H2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          LOC Summary
-        </button>
-        <div class="mode-tab-glider" aria-hidden="true"></div>
-      </nav>
-
-      <div class="layout">
-        <section class="card panel-form">
-          <!-- Full scan form -->
-          <form id="scan-form" class="panel" data-panel="scan">
-            <div class="field">
-              <label for="scan-input">Project folder</label>
-              <div class="path-row">
-                <input id="scan-input" type="text" placeholder="Select the folder you want to bundle…" autocomplete="off" spellcheck="false" required />
-                <button type="button" class="btn btn-ghost" data-browse="scan-input" data-kind="scan-input">Browse</button>
-              </div>
-            </div>
-            <div class="field">
-              <label for="scan-output">Output folder</label>
-              <div class="path-row">
-                <input id="scan-output" type="text" placeholder="Where should the report be saved?" autocomplete="off" spellcheck="false" required />
-                <button type="button" class="btn btn-ghost" data-browse="scan-output" data-kind="scan-output">Browse</button>
-              </div>
-            </div>
-
-            <details class="options" open>
-              <summary>Options</summary>
-              <div class="options-grid">
-                <label class="toggle">
-                  <input type="checkbox" id="scan-verbose" />
-                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                  <span class="toggle-label">Verbose (line numbers + summary)</span>
-                </label>
-                <label class="toggle">
-                  <input type="checkbox" id="scan-no-gitignore" />
-                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                  <span class="toggle-label">Ignore .gitignore rules</span>
-                </label>
-                <div class="field">
-                  <label for="scan-ignore">Extensions to exclude</label>
-                  <input id="scan-ignore" type="text" placeholder="e.g. png lock json" autocomplete="off" spellcheck="false" />
-                </div>
-                <div class="field">
-                  <label for="scan-max-lines">Split output after N lines</label>
-                  <input id="scan-max-lines" type="number" min="1" placeholder="No limit" />
-                </div>
-              </div>
-            </details>
-
-            <button type="submit" class="btn btn-primary btn-run" id="scan-run">
-              <span class="btn-label">Run Scan</span>
-              <span class="spinner" aria-hidden="true"></span>
+      <section class="project-bar" aria-label="Project controls">
+        <div class="project-path">
+          <label for="project-input">Project folder</label>
+          <div class="path-control">
+            <input id="project-input" type="text" placeholder="Select a project folder" autocomplete="off" spellcheck="false" />
+            <button type="button" class="btn btn-neutral" id="browse-project">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 5h6l2 2h8v12H4V5Z" stroke-linejoin="round" />
+              </svg>
+              Browse
             </button>
-          </form>
-
-          <!-- LOC form -->
-          <form id="loc-form" class="panel" data-panel="loc" hidden>
-            <div class="field">
-              <label for="loc-input">Project folder</label>
-              <div class="path-row">
-                <input id="loc-input" type="text" placeholder="Select the folder you want to measure…" autocomplete="off" spellcheck="false" required />
-                <button type="button" class="btn btn-ghost" data-browse="loc-input" data-kind="loc-input">Browse</button>
-              </div>
-            </div>
-
-            <details class="options" open>
-              <summary>Options</summary>
-              <div class="options-grid">
-                <label class="toggle">
-                  <input type="checkbox" id="loc-no-gitignore" />
-                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                  <span class="toggle-label">Ignore .gitignore rules</span>
-                </label>
-                <div class="field">
-                  <label for="loc-ignore">Extensions to exclude</label>
-                  <input id="loc-ignore" type="text" placeholder="e.g. png lock json" autocomplete="off" spellcheck="false" />
-                </div>
-              </div>
-            </details>
-
-            <button type="submit" class="btn btn-primary btn-run" id="loc-run">
-              <span class="btn-label">Analyze</span>
-              <span class="spinner" aria-hidden="true"></span>
-            </button>
-          </form>
-        </section>
-
-        <section class="card panel-results" id="results">
-          <div class="empty-state" id="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
-              <rect x="3.5" y="3.5" width="17" height="17" rx="4"/>
-              <path d="M8 9h8M8 13h8M8 17h4" stroke-linecap="round"/>
-            </svg>
-            <p>Results will show up here once you run a scan.</p>
           </div>
+        </div>
+        <div class="recent-control">
+          <label for="recent-projects">Recent</label>
+          <select id="recent-projects">
+            <option value="">No recent projects</option>
+          </select>
+        </div>
+        <div class="action-stack">
+          <button type="button" class="btn btn-neutral" id="analyze-project">
+            <span class="btn-label">Analyze</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="btn btn-primary" id="run-scan">
+            <span class="btn-label">Run Scan</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </section>
 
-          <div class="error-banner" id="error-banner" hidden></div>
-
-          <!-- Scan results -->
-          <div class="results-body" id="scan-results" hidden>
-            <div class="results-header">
-              <div>
-                <div class="project-name" id="rs-project-name"></div>
-                <div class="project-type" id="rs-project-type"></div>
-              </div>
-            </div>
-            <div class="stat-grid">
-              <div class="stat-card">
-                <span class="stat-value" id="rs-processed">0</span>
-                <span class="stat-label">Files processed</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-value" id="rs-skipped">0</span>
-                <span class="stat-label">Files skipped</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-value" id="rs-size">0 B</span>
-                <span class="stat-label">Report size</span>
-              </div>
-            </div>
-            <div class="output-list-wrap">
-              <h3>Saved reports</h3>
-              <ul class="output-list" id="rs-paths"></ul>
-            </div>
-          </div>
-
-          <!-- LOC results -->
-          <div class="results-body" id="loc-results" hidden>
-            <div class="stat-grid stat-grid-5">
-              <div class="stat-card">
-                <span class="stat-value" id="loc-processed">0</span>
-                <span class="stat-label">Processed</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-value" id="loc-skipped">0</span>
-                <span class="stat-label">Skipped</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-value" id="loc-lines">0</span>
-                <span class="stat-label">Total lines</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-value" id="loc-chars">0</span>
-                <span class="stat-label">Characters</span>
-              </div>
-              <div class="stat-card stat-card-accent">
-                <span class="stat-value" id="loc-tokens">0</span>
-                <span class="stat-label">Est. tokens</span>
-              </div>
-            </div>
-            <div class="top-files-wrap">
-              <h3>Top files by line count</h3>
-              <ol class="top-files" id="loc-top-files"></ol>
-            </div>
-          </div>
-        </section>
+      <div class="status-row">
+        <div class="status-pill" id="status-pill">Idle</div>
+        <div class="error-banner" id="error-banner" hidden></div>
       </div>
+
+      <section class="dashboard">
+        <section class="panel overview-panel">
+          <div class="project-heading">
+            <div>
+              <p class="eyebrow">Active Project</p>
+              <h1 id="project-name">No project selected</h1>
+              <p id="project-root" class="project-root">Choose a folder to begin.</p>
+            </div>
+            <span class="project-type" id="project-type">Generic</span>
+          </div>
+          <div class="metric-grid">
+            <div class="metric-cell">
+              <span class="metric-value" id="metric-files">0</span>
+              <span class="metric-label">Files</span>
+            </div>
+            <div class="metric-cell">
+              <span class="metric-value" id="metric-lines">0</span>
+              <span class="metric-label">Lines</span>
+            </div>
+            <div class="metric-cell metric-accent">
+              <span class="metric-value" id="metric-tokens">0</span>
+              <span class="metric-label">Tokens</span>
+            </div>
+            <div class="metric-cell">
+              <span class="metric-value" id="metric-size">0 B</span>
+              <span class="metric-label">Text size</span>
+            </div>
+            <div class="metric-cell">
+              <span class="metric-value" id="metric-skipped">0</span>
+              <span class="metric-label">Skipped</span>
+            </div>
+            <div class="metric-cell">
+              <span class="metric-value" id="metric-depth">0</span>
+              <span class="metric-label">Depth</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel composition-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Composition</p>
+              <h2>Extension Mix</h2>
+            </div>
+            <span class="panel-kicker" id="composition-kicker">0 languages</span>
+          </div>
+          <div class="donut-layout">
+            <svg id="extension-donut" class="donut-chart" viewBox="0 0 100 100" role="img" aria-label="Extension token mix"></svg>
+            <div class="legend-list" id="extension-legend"></div>
+          </div>
+        </section>
+
+        <section class="panel largest-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Distribution</p>
+              <h2>Largest Files</h2>
+            </div>
+            <div class="segmented" role="tablist" aria-label="Largest files metric">
+              <button type="button" class="segment is-active" data-largest-mode="tokens">Tokens</button>
+              <button type="button" class="segment" data-largest-mode="lines">Lines</button>
+              <button type="button" class="segment" data-largest-mode="size">Size</button>
+            </div>
+          </div>
+          <ol class="rank-list" id="largest-list"></ol>
+        </section>
+
+        <section class="panel readiness-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">LLM Readiness</p>
+              <h2 id="readiness-title">Awaiting Analysis</h2>
+            </div>
+            <strong class="readiness-score" id="readiness-score">0</strong>
+          </div>
+          <div class="budget-meter">
+            <div class="budget-fill" id="budget-fill"></div>
+          </div>
+          <ul class="insight-list" id="readiness-list"></ul>
+        </section>
+
+        <section class="panel diagnostics-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Scanner Diagnostics</p>
+              <h2>Inclusion Rules</h2>
+            </div>
+          </div>
+          <div class="diagnostic-grid">
+            <div class="diagnostic-item">
+              <span class="diagnostic-label">Config</span>
+              <strong id="config-state">Default</strong>
+            </div>
+            <div class="diagnostic-item">
+              <span class="diagnostic-label">Gitignore</span>
+              <strong id="gitignore-state">Enabled</strong>
+            </div>
+            <div class="diagnostic-item">
+              <span class="diagnostic-label">Max file size</span>
+              <strong id="max-size-state">0 B</strong>
+            </div>
+          </div>
+          <ul class="skip-list" id="skipped-list"></ul>
+        </section>
+
+        <aside class="side-column">
+          <section class="panel options-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Scan Setup</p>
+                <h2>Options</h2>
+              </div>
+            </div>
+            <div class="preset-grid" id="preset-grid">
+              <button type="button" class="preset is-active" data-preset="standard">Standard</button>
+              <button type="button" class="preset" data-preset="verbose">Verbose review</button>
+              <button type="button" class="preset" data-preset="split">Split-safe</button>
+              <button type="button" class="preset" data-preset="heavy">Ignore lock/heavy</button>
+            </div>
+            <div class="field">
+              <label for="output-input">Output folder</label>
+              <div class="path-control compact">
+                <input id="output-input" type="text" placeholder="Report output folder" autocomplete="off" spellcheck="false" />
+                <button type="button" class="btn btn-neutral icon-only" id="browse-output" title="Choose output folder" aria-label="Choose output folder">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 5h6l2 2h8v12H4V5Z" stroke-linejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="verbose-option" />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span>Verbose report</span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="no-gitignore-option" />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span>Ignore .gitignore</span>
+            </label>
+            <div class="field">
+              <label for="ignore-input">Extensions to exclude</label>
+              <input id="ignore-input" type="text" placeholder="png jpg ipynb" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="field">
+              <label for="max-lines-input">Split output after N lines</label>
+              <input id="max-lines-input" type="number" min="1" placeholder="No limit" />
+            </div>
+          </section>
+
+          <section class="panel history-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Local History</p>
+                <h2>Recent Runs</h2>
+              </div>
+            </div>
+            <div class="history-list" id="history-list"></div>
+          </section>
+
+          <section class="panel reports-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Output</p>
+                <h2>Saved Reports</h2>
+              </div>
+            </div>
+            <ul class="report-list" id="report-list"></ul>
+          </section>
+        </aside>
+      </section>
     </main>
 
   </body>

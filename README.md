@@ -56,7 +56,7 @@ Sample output only; values will vary by commit.
 
 ## Desktop UI (Tauri 2)
 
-A native desktop app wraps the Rust CLI's scanning engine in a dark-themed UI with two modes — **Full Scan** (bundle a project into a report) and **LOC Summary** (quick line/token counts) — including folder pickers, a live options panel, and a results view with a "reveal in Finder" shortcut for saved reports.
+A native desktop app wraps the Rust CLI's scanning engine in a richer analytics workspace. Pick a project folder, inspect extension mix, token/line distribution, largest files, scanner diagnostics, and LLM-readiness signals, then run the same full report scan with presets, local recent-project history, and "reveal in Finder" shortcuts for saved reports.
 
 ```bash
 npm install            # once, installs the Tauri CLI
@@ -64,7 +64,7 @@ npm run tauri dev       # launch in dev mode
 npm run tauri build     # produce a distributable app bundle
 ```
 
-The UI is plain TypeScript + CSS (no frontend framework) living in `ui/`, talking to two Tauri commands (`run_scan`, `run_loc`) defined in `src-tauri/src/main.rs` that call directly into the same `code_scanner` library used by the CLI.
+The UI is plain TypeScript + CSS (no frontend framework) living in `ui/`, talking to Tauri commands (`analyze_project`, `run_scan`, `run_loc`) defined in `src-tauri/src/main.rs` that call directly into the same `code_scanner` library used by the CLI.
 
 ## Default workflow
 If you prefer not to point at a project path directly, the repository also supports the original drop-in flow:

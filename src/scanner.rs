@@ -15,6 +15,7 @@ use anyhow::{Context, Result};
 use chrono::Local;
 use ignore::{Walk, WalkBuilder};
 use pathdiff::diff_paths;
+use std::collections::BTreeMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -37,9 +38,8 @@ impl OutputReport {
         max_lines: Option<u64>,
     ) -> Result<Self> {
         let path = Self::path_for_part(output_dir, project_name, 1);
-        let file = File::create(&path).with_context(|| {
-            format!("Failed to create output file: {}", path.display())
-        })?;
+        let file = File::create(&path)
+            .with_context(|| format!("Failed to create output file: {}", path.display()))?;
         let mut report = Self {
             output_dir: output_dir.to_path_buf(),
             project_name: project_name.to_owned(),
@@ -106,9 +106,8 @@ impl OutputReport {
 
         self.part += 1;
         let path = Self::path_for_part(&self.output_dir, &self.project_name, self.part);
-        self.file = File::create(&path).with_context(|| {
-            format!("Failed to create output file: {}", path.display())
-        })?;
+        self.file = File::create(&path)
+            .with_context(|| format!("Failed to create output file: {}", path.display()))?;
         self.paths.push(path);
         self.line_count = 0;
         self.write_continuation_header()?;
@@ -147,7 +146,11 @@ macro_rules! report_write {
 }
 
 // Orchestrates a full scan for a single project and writes the report.
-pub fn process_project(project_path: &Path, output_dir: &Path, args: &Args) -> Result<ProcessOutcome> {
+pub fn process_project(
+    project_path: &Path,
+    output_dir: &Path,
+    args: &Args,
+) -> Result<ProcessOutcome> {
     let project_name = project_path
         .file_name()
         .unwrap_or_default()
@@ -222,12 +225,12 @@ fn build_walker(project_path: &Path, args: &Args, config: &ProjectConfig) -> Wal
 // Collect totals for LOC/token estimation without writing any report files.
 pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
     let mut config = load_config(project_path);
-    
+
     // Apply CLI ignore arguments
     if !args.ignore.is_empty() {
         config.ignore_extensions(&args.ignore);
     }
-    
+
     let walker = build_walker(project_path, args, &config);
     let mut stats = LocStats::default();
 
@@ -310,8 +313,8 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
 
                 match fs::read_to_string(path) {
                     Ok(content) => {
-                        let relative_path = diff_paths(path, project_path)
-                            .unwrap_or_else(|| path.to_path_buf());
+                        let relative_path =
+                            diff_paths(path, project_path).unwrap_or_else(|| path.to_path_buf());
                         let line_count = content.lines().count() as u64;
                         let char_count = content.chars().count() as u64;
                         stats.processed_files += 1;
@@ -337,17 +340,281 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
     Ok(stats)
 }
 
+// Collect structured project analytics for the desktop UI without writing report files.
+pub fn analyze_project(project_path: &Path, args: &Args) -> Result<ProjectAnalysis> {
+    let project_name = project_path
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    let project_type = detect_project_type(project_path);
+    let config_present = project_path.join(".scanner-config.json").exists();
+    let mut config = load_config(project_path);
+
+    if !args.ignore.is_empty() {
+        config.ignore_extensions(&args.ignore);
+    }
+
+    let mut analysis = ProjectAnalysis {
+        project_name,
+        project_type,
+        root_path: project_path.to_path_buf(),
+        config: AnalysisConfigState {
+            config_present,
+            gitignore_enabled: !args.no_gitignore,
+            max_file_size: config.max_file_size,
+        },
+        ..ProjectAnalysis::default()
+    };
+    let mut extension_stats: BTreeMap<String, ExtensionStats> = BTreeMap::new();
+    let mut skipped_reasons: BTreeMap<String, u64> = BTreeMap::new();
+    let walker = build_walker(project_path, args, &config);
+
+    for result in walker {
+        match result {
+            Ok(entry) => {
+                let path = entry.path();
+                if path == project_path {
+                    continue;
+                }
+
+                let relative_path =
+                    diff_paths(path, project_path).unwrap_or_else(|| path.to_path_buf());
+                let depth = relative_path.components().count() as u64;
+                analysis.tree.max_depth = analysis.tree.max_depth.max(depth);
+
+                let file_name = path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_lowercase();
+
+                if config.ignore_dirs.contains(&file_name) {
+                    continue;
+                }
+
+                if path.is_dir() {
+                    analysis.tree.directories += 1;
+                    continue;
+                }
+
+                analysis.tree.files += 1;
+
+                if config.ignore_files.contains(&file_name) {
+                    record_skipped_reason(&mut skipped_reasons, "ignored file");
+                    continue;
+                }
+
+                if file_name.starts_with('.') {
+                    let trimmed = file_name.trim_start_matches('.');
+                    let whitelisted = config.code_extensions.contains(&file_name)
+                        || (!trimmed.is_empty() && config.code_extensions.contains(trimmed));
+                    if !whitelisted {
+                        record_skipped_reason(&mut skipped_reasons, "hidden file");
+                        continue;
+                    }
+                }
+
+                let ext = path
+                    .extension()
+                    .map(|e| e.to_string_lossy().to_string().to_lowercase())
+                    .unwrap_or_default();
+
+                if config.ignore_extensions.contains(&ext) {
+                    record_skipped_reason(&mut skipped_reasons, "ignored extension");
+                    continue;
+                }
+
+                if !ext.is_empty() && !config.code_extensions.contains(&ext) {
+                    if !config.code_extensions.contains(&file_name) {
+                        record_skipped_reason(&mut skipped_reasons, "unsupported extension");
+                        continue;
+                    }
+                }
+
+                let metadata = match path.metadata() {
+                    Ok(m) => m,
+                    Err(_) => {
+                        record_skipped_reason(&mut skipped_reasons, "metadata error");
+                        continue;
+                    }
+                };
+                let size = metadata.len();
+
+                if size > config.max_file_size {
+                    record_skipped_reason(&mut skipped_reasons, "over max file size");
+                    continue;
+                }
+
+                if is_binary(path) {
+                    record_skipped_reason(&mut skipped_reasons, "binary file");
+                    continue;
+                }
+
+                match fs::read_to_string(path) {
+                    Ok(content) => {
+                        let line_count = content.lines().count() as u64;
+                        let char_count = content.chars().count() as u64;
+                        let estimated_tokens = estimate_tokens(char_count);
+                        let extension = analysis_extension_label(path, &file_name);
+
+                        analysis.processed_files += 1;
+                        analysis.total_lines += line_count;
+                        analysis.total_chars += char_count;
+                        analysis.total_size += size;
+
+                        record_extension_stats(
+                            &mut extension_stats,
+                            &extension,
+                            line_count,
+                            char_count,
+                            estimated_tokens,
+                            size,
+                        );
+                        record_analysis_file(
+                            &mut analysis,
+                            AnalysisFileEntry {
+                                path: relative_path,
+                                extension,
+                                lines: line_count,
+                                chars: char_count,
+                                estimated_tokens,
+                                size,
+                            },
+                        );
+                    }
+                    Err(_) => {
+                        record_skipped_reason(&mut skipped_reasons, "read error");
+                    }
+                }
+            }
+            Err(_) => {
+                record_skipped_reason(&mut skipped_reasons, "walk error");
+            }
+        }
+    }
+
+    analysis.estimated_tokens = estimate_tokens(analysis.total_chars);
+    analysis.extension_breakdown = sorted_extension_stats(extension_stats);
+    analysis.skipped_reasons = sorted_skipped_reasons(skipped_reasons);
+    analysis.skipped_files = analysis.skipped_reasons.iter().map(|r| r.files).sum();
+
+    Ok(analysis)
+}
+
 fn estimate_tokens(total_chars: u64) -> u64 {
     (total_chars + 3) / 4
 }
 
-fn record_top_loc_file(stats: &mut LocStats, path: PathBuf, lines: u64, size: u64) {
-    stats
-        .largest_files
-        .push(LocFileEntry { path, lines, size });
-    stats
-        .largest_files
+fn analysis_extension_label(path: &Path, file_name: &str) -> String {
+    path.extension()
+        .map(|e| e.to_string_lossy().to_string().to_lowercase())
+        .filter(|e| !e.is_empty())
+        .unwrap_or_else(|| {
+            if file_name.is_empty() {
+                "no extension".to_string()
+            } else {
+                file_name.to_string()
+            }
+        })
+}
+
+fn record_extension_stats(
+    stats: &mut BTreeMap<String, ExtensionStats>,
+    extension: &str,
+    lines: u64,
+    chars: u64,
+    estimated_tokens: u64,
+    size: u64,
+) {
+    let entry = stats
+        .entry(extension.to_string())
+        .or_insert_with(|| ExtensionStats {
+            extension: extension.to_string(),
+            language: language_for_extension(extension).to_string(),
+            ..ExtensionStats::default()
+        });
+    entry.files += 1;
+    entry.lines += lines;
+    entry.chars += chars;
+    entry.estimated_tokens += estimated_tokens;
+    entry.size += size;
+}
+
+fn record_analysis_file(analysis: &mut ProjectAnalysis, entry: AnalysisFileEntry) {
+    analysis.largest_by_lines.push(entry.clone());
+    analysis
+        .largest_by_lines
         .sort_by(|a, b| b.lines.cmp(&a.lines));
+    analysis.largest_by_lines.truncate(10);
+
+    analysis.largest_by_tokens.push(entry.clone());
+    analysis
+        .largest_by_tokens
+        .sort_by(|a, b| b.estimated_tokens.cmp(&a.estimated_tokens));
+    analysis.largest_by_tokens.truncate(10);
+
+    analysis.largest_by_size.push(entry);
+    analysis.largest_by_size.sort_by(|a, b| b.size.cmp(&a.size));
+    analysis.largest_by_size.truncate(10);
+}
+
+fn record_skipped_reason(reasons: &mut BTreeMap<String, u64>, reason: &str) {
+    *reasons.entry(reason.to_string()).or_insert(0) += 1;
+}
+
+fn sorted_extension_stats(stats: BTreeMap<String, ExtensionStats>) -> Vec<ExtensionStats> {
+    let mut values: Vec<_> = stats.into_values().collect();
+    values.sort_by(|a, b| {
+        b.lines
+            .cmp(&a.lines)
+            .then_with(|| b.files.cmp(&a.files))
+            .then_with(|| a.extension.cmp(&b.extension))
+    });
+    values
+}
+
+fn sorted_skipped_reasons(reasons: BTreeMap<String, u64>) -> Vec<SkippedReasonStats> {
+    let mut values: Vec<_> = reasons
+        .into_iter()
+        .map(|(reason, files)| SkippedReasonStats { reason, files })
+        .collect();
+    values.sort_by(|a, b| b.files.cmp(&a.files).then_with(|| a.reason.cmp(&b.reason)));
+    values
+}
+
+fn language_for_extension(extension: &str) -> &str {
+    match extension {
+        "rs" => "Rust",
+        "ts" | "tsx" => "TypeScript",
+        "js" | "jsx" | "mjs" | "cjs" => "JavaScript",
+        "html" => "HTML",
+        "css" | "scss" => "Styles",
+        "py" => "Python",
+        "go" => "Go",
+        "java" | "kt" => "Java/Kotlin",
+        "swift" => "Swift",
+        "dart" => "Dart",
+        "rb" => "Ruby",
+        "php" => "PHP",
+        "cs" => "C#",
+        "c" | "cpp" | "h" | "hpp" => "C/C++",
+        "json" | "yaml" | "yml" | "toml" | "xml" => "Config",
+        "md" | "txt" | "tex" => "Docs",
+        "sh" | "bash" => "Shell",
+        "sql" => "SQL",
+        "csv" => "Data",
+        "ipynb" => "Notebook",
+        "dockerfile" => "Docker",
+        "makefile" => "Make",
+        "no extension" => "No extension",
+        _ => "Other",
+    }
+}
+
+fn record_top_loc_file(stats: &mut LocStats, path: PathBuf, lines: u64, size: u64) {
+    stats.largest_files.push(LocFileEntry { path, lines, size });
+    stats.largest_files.sort_by(|a, b| b.lines.cmp(&a.lines));
     if stats.largest_files.len() > 10 {
         stats.largest_files.truncate(10);
     }
@@ -548,7 +815,11 @@ fn write_file_contents(
     Ok(())
 }
 
-fn write_summary(report: &mut OutputReport, stats: &ScanStats, processed_count: usize) -> Result<()> {
+fn write_summary(
+    report: &mut OutputReport,
+    stats: &ScanStats,
+    processed_count: usize,
+) -> Result<()> {
     // Final footer with a lightweight count of what happened.
     report.write_blank_line()?;
     report_write!(
@@ -557,11 +828,7 @@ fn write_summary(report: &mut OutputReport, stats: &ScanStats, processed_count: 
     )?;
     report_write!(report, "📊 SUMMARY")?;
     report_write!(report, "  ✅ Files processed: {}", processed_count)?;
-    report_write!(
-        report,
-        "  ⏭️  Files skipped (estimated): {}",
-        stats.skipped
-    )?;
+    report_write!(report, "  ⏭️  Files skipped (estimated): {}", stats.skipped)?;
     report_write!(
         report,
         "  💾 Total content size: {}",
@@ -605,4 +872,65 @@ pub struct LocFileEntry {
     pub path: PathBuf,
     pub lines: u64,
     pub size: u64,
+}
+
+#[derive(Clone, Default)]
+pub struct ProjectAnalysis {
+    pub project_name: String,
+    pub project_type: String,
+    pub root_path: PathBuf,
+    pub processed_files: u64,
+    pub skipped_files: u64,
+    pub total_lines: u64,
+    pub total_chars: u64,
+    pub estimated_tokens: u64,
+    pub total_size: u64,
+    pub extension_breakdown: Vec<ExtensionStats>,
+    pub largest_by_lines: Vec<AnalysisFileEntry>,
+    pub largest_by_tokens: Vec<AnalysisFileEntry>,
+    pub largest_by_size: Vec<AnalysisFileEntry>,
+    pub skipped_reasons: Vec<SkippedReasonStats>,
+    pub tree: TreeStats,
+    pub config: AnalysisConfigState,
+}
+
+#[derive(Clone, Default)]
+pub struct ExtensionStats {
+    pub extension: String,
+    pub language: String,
+    pub files: u64,
+    pub lines: u64,
+    pub chars: u64,
+    pub estimated_tokens: u64,
+    pub size: u64,
+}
+
+#[derive(Clone, Default)]
+pub struct AnalysisFileEntry {
+    pub path: PathBuf,
+    pub extension: String,
+    pub lines: u64,
+    pub chars: u64,
+    pub estimated_tokens: u64,
+    pub size: u64,
+}
+
+#[derive(Clone, Default)]
+pub struct SkippedReasonStats {
+    pub reason: String,
+    pub files: u64,
+}
+
+#[derive(Clone, Default)]
+pub struct TreeStats {
+    pub directories: u64,
+    pub files: u64,
+    pub max_depth: u64,
+}
+
+#[derive(Clone, Default)]
+pub struct AnalysisConfigState {
+    pub config_present: bool,
+    pub gitignore_enabled: bool,
+    pub max_file_size: u64,
 }
