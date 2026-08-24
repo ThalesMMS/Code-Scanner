@@ -12,9 +12,12 @@ serde = { version = "1.0", features = ["derive"] } # Config JSON
 serde_json = "1.0"
 ignore = "0.4" # Efficient .gitignore handling (ripgrep engine)
 anyhow = "1.0" # Error handling
-chrono = "0.4" # Dates
-humansize = "2.1" # Byte formatting
+chrono = { version = "0.4", features = ["unstable-locales"] } # Dates + locale formats
 pathdiff = "0.2" # Relative paths
+fluent-bundle = "0.15"
+unic-langid = "0.9"
+sys-locale = "0.3"
+rust-embed = { version = "8", features = ["include-exclude"] }
 
 [dev-dependencies]
 tempfile = "3"

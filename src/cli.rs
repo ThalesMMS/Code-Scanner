@@ -7,8 +7,10 @@
 // Thales Matheus Mendonça Santos - November 2025
 //
 
-use clap::Parser;
+use clap::{Command, CommandFactory, FromArgMatches, Parser};
 use std::path::PathBuf;
+
+use crate::t;
 
 /// Command-line interface definition for the code scanner.
 #[derive(Parser, Debug)]
@@ -41,4 +43,55 @@ pub struct Args {
     /// Split output into multiple files after this many lines (never breaks mid source file)
     #[arg(long, value_name = "LINES")]
     pub max_output_lines: Option<u64>,
+
+    /// Language for CLI messages
+    #[arg(long, value_name = "LOCALE")]
+    pub lang: Option<String>,
+}
+
+impl Args {
+    pub fn parse_localized() -> Self {
+        crate::i18n::init_from_cli();
+        let matches = localize_command(Self::command()).get_matches();
+        Self::from_arg_matches(&matches).expect("CLI matches")
+    }
+}
+
+fn localize_command(mut command: Command) -> Command {
+    // clap's help_heading only accepts &'static Str.
+    let options: &'static str = Box::leak(
+        t!("cli-help-options")
+            .trim_end_matches([':', '：', '։', '՝'])
+            .trim()
+            .to_string()
+            .into_boxed_str(),
+    );
+    let template = format!(
+        "{{before-help}}{{about-with-newline}}\n{} {{usage}}\n\n{{all-args}}{{after-help}}",
+        t!("cli-help-usage")
+    );
+    command = command
+        .about(t!("app-about"))
+        .help_template(template)
+        .mut_args(|arg| arg.help_heading(options));
+    for (id, key) in [
+        ("input_dir", "cli-arg-input-help"),
+        ("output_dir", "cli-arg-output-help"),
+        ("loc", "cli-arg-loc-help"),
+        ("no_gitignore", "cli-arg-no-gitignore-help"),
+        ("verbose", "cli-arg-verbose-help"),
+        ("ignore", "cli-arg-ignore-help"),
+        ("max_output_lines", "cli-arg-max-output-lines-help"),
+        ("lang", "cli-arg-lang-help"),
+    ] {
+        command = command.mut_arg(id, |arg| arg.help(t!(key)).help_heading(options));
+    }
+    // Built-in --help/--version exist only after clap materializes them.
+    command.build();
+    command = command
+        .mut_arg("help", |arg| arg.help(t!("cli-help-print-help")).help_heading(options))
+        .mut_arg("version", |arg| {
+            arg.help(t!("cli-help-print-version")).help_heading(options)
+        });
+    command
 }

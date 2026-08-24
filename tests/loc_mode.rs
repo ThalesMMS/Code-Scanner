@@ -7,6 +7,7 @@ fn run_loc(cwd: &Path, target: &Path, extra_args: &[&str]) -> String {
     let bin = env!("CARGO_BIN_EXE_code_scanner");
     let mut cmd = Command::new(bin);
     cmd.current_dir(cwd)
+        .env("CODE_SCANNER_LANG", "en-US")
         .arg("--loc")
         .arg(target)
         .args(extra_args);

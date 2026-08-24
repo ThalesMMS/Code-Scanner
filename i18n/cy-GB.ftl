@@ -1,0 +1,261 @@
+# Code Scanner — Cymraeg (cy-GB)
+
+app-name = Code Scanner
+app-banner =
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║               RUST CODE SCANNER (UNIFIED)                     ║
+    ╚═══════════════════════════════════════════════════════════════╝
+app-about = Mae’n bwndelu codebase i un adroddiad testun ar gyfer archwiliadau, adolygiadau cod a phromptiau LLM.
+
+cli-arg-input-help = Cyfeiriadur mewnbwn (prosiect i’w sganio)
+cli-arg-output-help = Cyfeiriadur allbwn ar gyfer adroddiadau
+cli-arg-loc-help = Modd LOC: cyfrifo crynodeb llinellau/tocynnau ar gyfer y llwybr targed
+cli-arg-no-gitignore-help = Anwybyddu ffeil .gitignore y prosiect
+cli-arg-verbose-help = Modd manwl
+cli-arg-ignore-help = Estyniadau ffeil i’w hanwybyddu (e.e. --ignore .ts .js .json)
+cli-arg-max-output-lines-help = Rhannu’r allbwn yn nifer o ffeiliau ar ôl y nifer hwn o linellau (byth yng nghanol ffeil ffynhonnell)
+cli-arg-lang-help = Iaith negeseuon y CLI (e.e. en-US, cy-GB)
+
+cli-label-input = 📍 Mewnbwn: { $path }
+cli-label-output = 📍 Allbwn: { $path }
+cli-max-output-lines = 📄 Uchafswm llinellau allbwn fesul ffeil: { $count }
+cli-default-dir-created =
+    ℹ️  Crëwyd y cyfeiriadur mewnbwn rhagosodedig yn: { $path }
+    Ychwanegwch y prosiectau i’w dadansoddi yn y cyfeiriadur hwn a rhedwch eto.
+cli-completed = ✨ Wedi gorffen!
+cli-no-subdirectories = ℹ️  Dim is-gyfeiriaduron. Yn prosesu’r gwraidd fel un prosiect.
+cli-loc-mode = 📏 Modd LOC
+cli-loc-target = 📍 Targed: { $path }
+cli-loc-summary-target = 📁 Targed: { $path }
+cli-gitignore-disabled = ⚠️  .gitignore wedi’i analluogi (--no-gitignore)
+cli-loc-summary-title = 📊 CRYNODEB LOC
+cli-loc-files-processed = ✅ Ffeiliau wedi’u prosesu: { $count }
+cli-loc-files-skipped = ⏭️  Ffeiliau wedi’u hepgor: { $count }
+cli-loc-total-lines = 🧮 Cyfanswm llinellau: { $count }
+cli-loc-total-chars = 🔤 Cyfanswm nodau: { $count }
+cli-loc-estimated-tokens = 🤖 Tocynnau amcangyfrifedig: { $count }
+cli-loc-top-files = 📈 Y 10 FFEIL GYDA’R MWYAF O LINELLAU
+cli-loc-no-files =   (dim ffeiliau wedi’u cyfrif)
+cli-loc-top-file =   { $index }. { $path } ({ $lines } llinell, { $size })
+cli-loc-dir-not-found = Ni chanfuwyd y cyfeiriadur ar gyfer LOC: { $path }
+cli-processing = 📦 Yn prosesu: { $project } ({ $kind })
+cli-saved-to =   ✅ Wedi’i gadw i: { $path }
+cli-ignoring-excessive-size = Yn anwybyddu { $path } (maint gormodol)
+cli-error-reading-input = Gwall wrth ddarllen y mewnbwn: { $error }
+cli-error-input-not-found = Ni chanfuwyd y cyfeiriadur mewnbwn: { $path }
+cli-error-create-input = Methwyd creu’r cyfeiriadur mewnbwn: { $path }
+cli-error-create-output = Methwyd creu’r cyfeiriadur allbwn
+cli-error-create-report = Methwyd creu’r ffeil allbwn: { $path }
+cli-error-metadata = Methwyd darllen metadata { $path }
+cli-report-files-processed =   ✅ Ffeiliau wedi’u prosesu: { $count }
+
+report-folder-structure = STRWYTHUR FFOLDER
+report-file-contents = 📄 CYNNWYS FFEILIAU
+report-contents-rule = ═══════════════════════════════════════════════════════════════
+report-continued-part = (parhad — rhan { $part })
+report-file-rule-top = ┌─────────────────────────────────────────────────────────────
+report-file-name-verbose = │ 📄 { $path }
+report-file-size-verbose = │ 📊 Maint: { $size }
+report-file-rule-mid = ├─────────────────────────────────────────────────────────────
+report-file-rule-bottom = └─────────────────────────────────────────────────────────────
+report-file-name = 📄 { $path }
+report-binary-omitted-verbose = │ [Ffeil ddeuaidd neu amgodiad heb gymorth - cynnwys wedi’i hepgor]
+report-binary-omitted = [Ffeil ddeuaidd neu amgodiad heb gymorth - cynnwys wedi’i hepgor]
+report-utf8-error-verbose = │ [Gwall wrth ddarllen y ffeil fel testun UTF-8]
+report-utf8-error = [Gwall wrth ddarllen y ffeil fel testun UTF-8]
+report-summary-title = 📊 CRYNODEB
+report-files-skipped =   ⏭️  Ffeiliau wedi’u hepgor (amcangyfrif): { $count }
+report-total-content-size =   💾 Cyfanswm maint y cynnwys: { $size }
+
+skip-reason-ignored-file = ffeil wedi’i hanwybyddu
+skip-reason-hidden-file = ffeil gudd
+skip-reason-ignored-extension = estyniad wedi’i anwybyddu
+skip-reason-unsupported-extension = estyniad heb gymorth
+skip-reason-metadata-error = gwall metadata
+skip-reason-over-max-file-size = dros uchafswm maint y ffeil
+skip-reason-binary-file = ffeil ddeuaidd
+skip-reason-read-error = gwall darllen
+skip-reason-walk-error = gwall cerdded
+
+tauri-error-input-missing = Nid yw’r ffolder mewnbwn yn bodoli: { $path }
+tauri-error-folder-missing = Nid yw’r ffolder yn bodoli: { $path }
+tauri-error-running-app = gwall wrth redeg y rhaglen Code Scanner
+
+ui-toggle-theme = Newid thema
+ui-project-folder = Ffolder y prosiect
+ui-project-folder-placeholder = Dewiswch ffolder prosiect
+ui-browse = Pori
+ui-recent = Diweddar
+ui-no-recent-projects = Dim prosiectau diweddar
+ui-analyze = Dadansoddi
+ui-run-scan = Rhedeg sgan
+ui-idle = Segur
+ui-project-controls-aria = Rheolaethau’r prosiect
+ui-active-project = Prosiect gweithredol
+ui-no-project-selected = Dim prosiect wedi’i ddewis
+ui-choose-folder = Dewiswch ffolder i ddechrau.
+ui-project-type-generic = Generig
+ui-metric-files = Ffeiliau
+ui-metric-lines = Llinellau
+ui-metric-tokens = Tocynnau
+ui-metric-text-size = Maint testun
+ui-metric-skipped = Wedi’u hepgor
+ui-metric-depth = Dyfnder
+ui-composition = Cyfansoddiad
+ui-extension-mix = Cymysgedd estyniadau
+ui-groups-count = { $count } grŵp
+ui-extension-token-mix-aria = Cymysgedd tocynnau estyniad
+ui-distribution = Dosbarthiad
+ui-largest-files = Y ffeiliau mwyaf
+ui-largest-files-metric-aria = Metrig y ffeiliau mwyaf
+ui-segment-tokens = Tocynnau
+ui-segment-lines = Llinellau
+ui-segment-size = Maint
+ui-llm-readiness = Parodrwydd LLM
+ui-awaiting-analysis = Yn aros am ddadansoddiad
+ui-scanner-diagnostics = Diagnosteg y sganiwr
+ui-inclusion-rules = Rheolau cynnwys
+ui-config = Ffurfweddiad
+ui-gitignore = Gitignore
+ui-max-file-size = Uchafswm maint ffeil
+ui-scan-setup = Gosodiad sgan
+ui-options = Dewisiadau
+ui-standard = Safonol
+ui-verbose-review = Adolygiad manwl
+ui-split-safe = Rhaniad diogel
+ui-ignore-lock-heavy = Anwybyddu lock/ffeiliau trwm
+ui-output-folder = Ffolder allbwn
+ui-output-placeholder = Ffolder allbwn adroddiadau
+ui-choose-output-folder = Dewiswch ffolder allbwn
+ui-verbose-report = Adroddiad manwl
+ui-ignore-gitignore = Anwybyddu .gitignore
+ui-extensions-to-exclude = Estyniadau i’w heithrio
+ui-split-after-n-lines = Rhannu’r allbwn ar ôl N llinell
+ui-no-limit = Dim terfyn
+ui-local-history = Hanes lleol
+ui-recent-runs = Rhediadau diweddar
+ui-output = Allbwn
+ui-saved-reports = Adroddiadau wedi’u cadw
+ui-status-analyzing = Yn dadansoddi’r prosiect
+ui-status-scanning = Yn rhedeg sgan
+ui-status-analysis-failed = Methodd y dadansoddiad
+ui-status-scan-failed = Methodd y sgan
+ui-status-recent-loaded = Prosiect diweddar wedi’i lwytho
+ui-status-report-copied = Llwybr yr adroddiad wedi’i gopïo
+ui-unnamed-project = Prosiect heb enw
+ui-recent-project = Prosiect diweddar
+ui-project-config = Ffurfweddiad y prosiect
+ui-defaults = Rhagosodiadau
+ui-enabled = Wedi’i alluogi
+ui-disabled = Wedi’i analluogi
+ui-saved-reports-count = { $count ->
+    [zero] Dim adroddiadau wedi’u cadw
+    [one] { $count } adroddiad wedi’i gadw
+    [two] { $count } adroddiad wedi’u cadw
+    [few] { $count } adroddiad wedi’u cadw
+    [many] { $count } adroddiad wedi’u cadw
+   *[other] { $count } o adroddiadau wedi’u cadw
+}
+ui-language = Iaith
+ui-language-system = System
+ui-analyze-to-refresh = Dadansoddwch i adnewyddu
+ui-analyze-to-refresh-distribution = Dadansoddwch i adnewyddu dosbarthiad ffeiliau.
+ui-analyze-to-refresh-readiness = Dadansoddwch i adnewyddu parodrwydd.
+ui-analyze-to-refresh-diagnostics = Dadansoddwch i adnewyddu diagnosteg.
+ui-no-source-files = Dim ffeiliau ffynhonnell
+ui-donut-tokens = tocynnau
+ui-legend-files = { $percent }% - { $files } ffeil
+ui-analyze-to-populate = Dadansoddwch brosiect i lenwi dosbarthiad ffeiliau.
+ui-no-files-matched = Ni chydweddodd unrhyw ffeil â rheolau’r sganiwr.
+ui-readiness-compact = Prompt cryno
+ui-readiness-review = Prompt maint adolygu
+ui-readiness-large = Cyd-destun mawr
+ui-insight-tokens-files = { $tokens } tocyn amcangyfrifedig ar draws { $files } ffeil.
+ui-insight-split-active = Mae rhannu allbwn yn weithredol ar { $lines } llinell fesul rhan adroddiad.
+ui-insight-split-suggest = Gosodwch y rhaniad ger { $lines } llinell i leihau adroddiadau rhy fawr.
+ui-insight-split-optional = Mae rhannu allbwn yn ddewisol ar gyfer y cyfrif llinellau presennol.
+ui-insight-top-file = { $path } yw’r cyfrannwr tocynnau mwyaf gyda { $tokens } tocyn.
+ui-insight-top-extension = Mae ffeiliau { $extension } yn cyfrif am { $percent }% o’r tocynnau amcangyfrifedig.
+ui-insight-gitignore-disabled = Mae .gitignore wedi’i analluogi, felly gall ffeiliau a gynhyrchwyd neu ffeiliau vendor fynd i mewn i’r sgan.
+ui-no-skipped-files = Dim ffeiliau wedi’u hepgor.
+ui-no-saved-reports = Dim adroddiadau wedi’u cadw eto.
+ui-reveal-in-finder = Dangos yn Finder
+ui-copy-path = Copïo’r llwybr
+ui-error-copy-path = Methwyd copïo llwybr yr adroddiad.
+ui-choose-recent-project = Dewiswch brosiect diweddar
+ui-no-local-history = Dim hanes lleol eto.
+ui-history-tokens = { $tokens } tocyn
+ui-not-analyzed = heb ei ddadansoddi
+ui-error-choose-folder-analyze = Dewiswch ffolder prosiect cyn dadansoddi.
+ui-error-choose-folder-scan = Dewiswch ffolder prosiect cyn rhedeg sgan.
+ui-status-analyzed-files = Wedi dadansoddi { $count } ffeil
+ui-error-analyze = Methwyd dadansoddi’r prosiect hwn.
+ui-status-saved-reports = Wedi cadw { $count } ffeil adroddiad
+ui-error-scan = Methwyd rhedeg y sgan.
+ui-status-project-selected = Prosiect wedi’i ddewis
+ui-status-preset-applied = Rhagosodiad { $preset } wedi’i gymhwyso
+ui-analyze-to-calculate-readiness = Dadansoddwch brosiect i gyfrifo parodrwydd y prompt.
+ui-analyze-to-inspect-skipped = Dadansoddwch brosiect i archwilio ffeiliau wedi’u hepgor.
+ui-no-analysis-yet = Dim dadansoddiad eto
+ui-zero-bytes = 0 B
+
+bash-banner =
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║                CODE PROJECT SCANNER                           ║
+    ╚═══════════════════════════════════════════════════════════════╝
+bash-processing =   📁 Yn prosesu: { $project }
+bash-detected-type =     🔍 Math a ganfuwyd: { $kind }
+bash-using-gitignore =     📋 Yn defnyddio .gitignore y prosiect
+bash-error-generating-tree = Gwall wrth greu’r goeden
+bash-files-found =     📊 Ffeiliau a ganfuwyd: { $count }
+bash-skipped-too-large = ⚠️  WEDI’I HEPGOR: Rhy fawr ({ $size } > { $max })
+bash-skipped-too-large-verbose = │ ⚠️  WEDI’I HEPGOR: Rhy fawr ({ $size } > { $max })
+bash-error-reading-file = [Gwall wrth ddarllen y ffeil]
+bash-error-reading-file-verbose = │ [Gwall wrth ddarllen y ffeil]
+bash-binary-omitted = [Ffeil ddeuaidd - wedi’i hepgor]
+bash-binary-omitted-verbose = │ [Ffeil ddeuaidd - wedi’i hepgor]
+bash-summary-skipped-gitignore =   📋 Wedi’u hepgor drwy .gitignore: { $count }
+bash-processed =     ✅ Wedi’u prosesu: { $count }
+bash-skipped =     ⏭️  Wedi’u hepgor: { $count }
+bash-via-gitignore =     📋 Drwy .gitignore: { $count }
+bash-size =     💾 Maint: { $size }
+bash-configuration = 📍 Ffurfweddiad:
+bash-target-directory =    • Cyfeiriadur targed: { $path }
+bash-output-directory =    • Cyfeiriadur allbwn: { $path }
+bash-output-filename-suffix =    • Ôl-ddodiad enw’r ffeil allbwn: { $suffix }
+bash-max-file-size =    • Uchafswm maint ffeil: { $size }
+bash-use-gitignore =    • Defnyddio .gitignore: { $value }
+bash-verbose-mode =    • Modd manwl: { $value }
+bash-extra-ignored-files =    • Ffeiliau ychwanegol wedi’u hanwybyddu: { $value }
+bash-extra-ignored-dirs =    • Cyfeiriaduron ychwanegol wedi’u hanwybyddu: { $value }
+bash-ignored-relative-paths =    • Llwybrau cymharol wedi’u hanwybyddu: { $value }
+bash-ignored-absolute-paths =    • Llwybrau absoliwt wedi’u hanwybyddu: { $value }
+bash-starting-scan = 🚀 Yn dechrau’r sgan...
+bash-project-n = [Prosiect { $count }]
+bash-saved =   💾 Wedi’i gadw: { $path }
+bash-no-subdirectories = ℹ️  Dim is-gyfeiriaduron. Yn prosesu { $path } fel un prosiect...
+bash-done = ✨ GORFFEN!
+bash-total-projects =   📊 Cyfanswm y prosiectau a broseswyd: { $count }
+bash-files-generated-in =   📂 Ffeiliau wedi’u creu yn: { $path }
+bash-generated-files = 📋 Ffeiliau a grëwyd:
+bash-no-files-generated =   ⚠️  Dim ffeiliau wedi’u creu.
+bash-available-env = 💡 Newidynnau amgylchedd ar gael:
+bash-env-target-dir =    • TARGET_DIR - Cyfeiriadur targed i’w sganio
+bash-env-output-dir =    • OUTPUT_DIR - Cyfeiriadur allbwn
+bash-env-output-suffix =    • OUTPUT_FILE_SUFFIX - Ôl-ddodiad enw’r ffeil allbwn
+bash-env-max-size =    • MAX_SIZE_BYTES - Uchafswm maint ffeil
+bash-env-use-gitignore =    • USE_GITIGNORE - Defnyddio .gitignore (true/false)
+bash-env-verbose =    • VERBOSE - Modd manwl (true/false)
+bash-env-ignore-files =    • IGNORE_FILES_EXTRA - Ffeiliau ychwanegol i’w hanwybyddu (wedi’u gwahanu gan bibell)
+bash-env-ignore-dirs =    • IGNORE_DIRS_EXTRA - Cyfeiriaduron ychwanegol i’w hanwybyddu (wedi’u gwahanu gan bibell)
+bash-env-ignore-paths =    • IGNORE_PATHS - Llwybrau cymharol penodol i’w hanwybyddu (wedi’u gwahanu gan bibell)
+bash-env-ignore-absolute =    • IGNORE_ABSOLUTE_PATHS - Llwybrau absoliwt penodol i’w hanwybyddu (wedi’u gwahanu gan bibell)
+bash-quick-examples = 📌 Enghreifftiau cyflym:
+bash-default-dir-hint =    Ychwanegwch y prosiectau i’w sganio yn y cyfeiriadur hwn a rhedwch y sgript eto.
+bash-error-target-not-found = ❌ Gwall: Ni chanfuwyd y cyfeiriadur targed yn: { $path }
+bash-report-total-size =   💾 Cyfanswm maint: { $size }
+
+cli-help-usage = Defnydd:
+cli-help-options = Opsiynau:
+cli-help-print-help = Argraffu cymorth
+cli-help-print-version = Argraffu fersiwn

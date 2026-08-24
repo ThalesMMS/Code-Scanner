@@ -20,5 +20,6 @@ fn is_binary_false_for_text() {
 
 #[test]
 fn format_size_formats_zero() {
+    code_scanner::i18n::init(Some("en-US"));
     assert_eq!(format_size(0), "0 B");
 }

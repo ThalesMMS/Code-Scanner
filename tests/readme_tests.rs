@@ -14,8 +14,10 @@ use std::path::Path;
 use std::process::Command;
 use tempfile::tempdir;
 
-fn bin() -> &'static str {
-    env!("CARGO_BIN_EXE_code_scanner")
+fn scanner_cmd() -> Command {
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_code_scanner"));
+    cmd.env("CODE_SCANNER_LANG", "en-US");
+    cmd
 }
 
 // ---------------------------------------------------------------------------
@@ -32,7 +34,8 @@ fn cli_accepts_input_dir_and_output_dir_flags() {
     // Write a minimal Rust file so the scanner has something to process.
     fs::write(input.path().join("main.rs"), "fn main() {}\n").expect("write main.rs");
 
-    let status = Command::new(bin())
+    let status = scanner_cmd()
+        .env("CODE_SCANNER_LANG", "en-US")
         .arg("--input-dir")
         .arg(input.path())
         .arg("--output-dir")
@@ -55,7 +58,7 @@ fn cli_accepts_short_input_output_flags() {
 
     fs::write(input.path().join("lib.rs"), "pub fn f() {}\n").expect("write lib.rs");
 
-    let status = Command::new(bin())
+    let status = scanner_cmd()
         .arg("-i")
         .arg(input.path())
         .arg("-o")
@@ -77,7 +80,7 @@ fn cli_accepts_loc_flag() {
     let dir = tempdir().expect("temp dir");
     fs::write(dir.path().join("hello.rs"), "fn main() {}\n").expect("write hello.rs");
 
-    let output = Command::new(bin())
+    let output = scanner_cmd()
         .arg("--loc")
         .arg(dir.path())
         .arg("--no-gitignore")
@@ -102,7 +105,8 @@ fn cli_accepts_multiple_ignore_extensions_after_one_flag() {
     fs::write(input.path().join("view.js"), "console.log('view');\n").expect("write view.js");
     fs::write(input.path().join("data.json"), "{\"ok\": true}\n").expect("write data.json");
 
-    let status = Command::new(bin())
+    let status = scanner_cmd()
+        .env("CODE_SCANNER_LANG", "en-US")
         .arg("--input-dir")
         .arg(input.path())
         .arg("--output-dir")
@@ -155,7 +159,7 @@ fn loc_summary_labels_match_readme_example() {
     let dir = tempdir().expect("temp dir");
     fs::write(dir.path().join("code.rs"), "fn a() {}\nfn b() {}\n").expect("write code.rs");
 
-    let output = Command::new(bin())
+    let output = scanner_cmd()
         .arg("--loc")
         .arg(dir.path())
         .arg("--no-gitignore")
@@ -197,7 +201,7 @@ fn loc_summary_includes_top_10_heading() {
     let dir = tempdir().expect("temp dir");
     fs::write(dir.path().join("main.rs"), "one\ntwo\nthree\n").expect("write main.rs");
 
-    let output = Command::new(bin())
+    let output = scanner_cmd()
         .arg("--loc")
         .arg(dir.path())
         .arg("--no-gitignore")
@@ -223,7 +227,7 @@ fn loc_mode_does_not_create_output_files() {
     let output_dir = dir.path().join("output");
     assert!(!output_dir.exists(), "precondition: output dir must not exist");
 
-    let status = Command::new(bin())
+    let status = scanner_cmd()
         .arg("--loc")
         .arg(dir.path())
         .arg("--no-gitignore")
@@ -244,7 +248,7 @@ fn loc_summary_shows_target_path() {
     let dir = tempdir().expect("temp dir");
     fs::write(dir.path().join("app.rs"), "fn run() {}\n").expect("write app.rs");
 
-    let output = Command::new(bin())
+    let output = scanner_cmd()
         .arg("--loc")
         .arg(dir.path())
         .arg("--no-gitignore")
@@ -268,7 +272,7 @@ fn loc_summary_handles_empty_directory() {
     // Write only a file that will be skipped (binary).
     fs::write(dir.path().join("img.png"), [137u8, 80, 78, 71]).expect("write png");
 
-    let output = Command::new(bin())
+    let output = scanner_cmd()
         .arg("--loc")
         .arg(dir.path())
         .arg("--no-gitignore")
@@ -304,7 +308,8 @@ fn scan_output_file_uses_project_name_suffix() {
     fs::create_dir_all(&project_dir).expect("create project dir");
     fs::write(project_dir.join("main.rs"), "fn main() {}\n").expect("write main.rs");
 
-    let status = Command::new(bin())
+    let status = scanner_cmd()
+        .env("CODE_SCANNER_LANG", "en-US")
         .arg("--input-dir")
         .arg(&project_dir)
         .arg("--output-dir")
@@ -367,7 +372,7 @@ fn default_input_dir_matches_readme() {
     // (the documented behaviour for a missing default input dir).
     let cwd = tempdir().expect("cwd temp dir");
 
-    let output = Command::new(bin())
+    let output = scanner_cmd()
         .current_dir(cwd.path())
         .output()
         .expect("run binary with no args");
@@ -402,7 +407,7 @@ fn default_output_dir_is_created_automatically() {
     fs::write(input.path().join("src.rs"), "fn f() {}\n").expect("write src.rs");
 
     // Point to an explicit input but let output default to ./output in cwd.
-    let output = Command::new(bin())
+    let output = scanner_cmd()
         .current_dir(cwd.path())
         .arg("--input-dir")
         .arg(input.path())

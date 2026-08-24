@@ -8,66 +8,65 @@
 //
 
 use code_scanner::cli::Args;
+use code_scanner::i18n;
 use code_scanner::project::is_single_project_root;
 use code_scanner::scanner::{collect_loc_stats, process_project, LocStats};
 use code_scanner::utils::format_size;
+use code_scanner::t;
 use anyhow::{bail, Context, Result};
-use clap::Parser;
 use std::fs;
 use std::path::Path;
 
 fn main() -> Result<()> {
-    // Parse CLI input and hydrate the Args struct with defaults and user flags.
-    let args = Args::parse();
+    let args = Args::parse_localized();
 
     if let Some(loc_path) = &args.loc {
         return run_loc_mode(loc_path, &args);
     }
 
-    // Fail fast if the input directory does not exist to avoid silent no-ops.
     if !args.input_dir.exists() {
         if is_default_input_dir(&args.input_dir) {
             fs::create_dir_all(&args.input_dir).with_context(|| {
-                format!(
-                    "Failed to create input directory: {}",
-                    args.input_dir.display()
+                t!(
+                    "cli-error-create-input",
+                    "path" => args.input_dir.display().to_string()
                 )
             })?;
             println!(
-                "ℹ️  The default input directory was created at: {}",
-                args.input_dir.display()
-            );
-            println!(
-                "   Add the projects you want to analyze inside this directory and run again."
+                "{}",
+                t!(
+                    "cli-default-dir-created",
+                    "path" => args.input_dir.display().to_string()
+                )
             );
             return Ok(());
         }
-        bail!("Input directory not found: {:?}", args.input_dir);
+        bail!(
+            "{}",
+            t!(
+                "cli-error-input-not-found",
+                "path" => format!("{:?}", args.input_dir)
+            )
+        );
     }
 
-    // Ensure the output directory exists so report writes do not panic later.
-    fs::create_dir_all(&args.output_dir).context("Failed to create output directory")?;
+    fs::create_dir_all(&args.output_dir).context(t!("cli-error-create-output"))?;
 
-    // Show a quick banner so users know what is being processed.
     print_banner(&args);
 
-    // Treat the root as a single project when it looks like a repo root, otherwise
-    // iterate over subfolders and process them individually.
     if is_single_project_root(&args.input_dir) {
         process_project(&args.input_dir, &args.output_dir, &args)?;
     } else {
         process_subdirectories(&args)?;
     }
 
-    println!("\n✨ Completed!");
+    println!("\n{}", t!("cli-completed"));
     Ok(())
 }
 
 fn process_subdirectories(args: &Args) -> Result<()> {
     let mut projects_found = 0;
 
-    // Walk over the first level of the input directory and process each folder
-    // as a standalone project.
     for entry in fs::read_dir(&args.input_dir)? {
         let entry = entry?;
         let path = entry.path();
@@ -78,9 +77,8 @@ fn process_subdirectories(args: &Args) -> Result<()> {
         }
     }
 
-    // If nothing was found, fall back to treating the root as a single project.
     if projects_found == 0 {
-        println!("ℹ️  No subdirectories found. Processing root as a single project.");
+        println!("{}", t!("cli-no-subdirectories"));
         process_project(&args.input_dir, &args.output_dir, args)?;
     }
 
@@ -92,26 +90,51 @@ fn is_default_input_dir(path: &std::path::Path) -> bool {
 }
 
 fn print_banner(args: &Args) {
-    println!("╔═══════════════════════════════════════════════════════════════╗");
-    println!("║               RUST CODE SCANNER (UNIFIED)                     ║");
-    println!("╚═══════════════════════════════════════════════════════════════╝");
-    println!("📍 Input: {:?}", args.input_dir);
-    println!("📍 Output: {:?}", args.output_dir);
+    println!("{}", t!("app-banner"));
+    println!(
+        "{}",
+        t!(
+            "cli-label-input",
+            "path" => format!("{:?}", args.input_dir)
+        )
+    );
+    println!(
+        "{}",
+        t!(
+            "cli-label-output",
+            "path" => format!("{:?}", args.output_dir)
+        )
+    );
     if let Some(max_lines) = args.max_output_lines {
-        println!("📄 Max output lines per file: {max_lines}");
+        println!(
+            "{}",
+            t!("cli-max-output-lines", "count" => i18n::format_number(max_lines as i64))
+        );
     }
     println!();
 }
 
 fn run_loc_mode(loc_path: &Path, args: &Args) -> Result<()> {
     if !loc_path.exists() {
-        bail!("Directory for LOC not found: {}", loc_path.display());
+        bail!(
+            "{}",
+            t!(
+                "cli-loc-dir-not-found",
+                "path" => loc_path.display().to_string()
+            )
+        );
     }
 
-    println!("📏 LOC mode");
-    println!("📍 Target: {}", loc_path.display());
+    println!("{}", t!("cli-loc-mode"));
+    println!(
+        "{}",
+        t!(
+            "cli-loc-target",
+            "path" => loc_path.display().to_string()
+        )
+    );
     if args.no_gitignore {
-        println!("⚠️  .gitignore disabled (--no-gitignore)");
+        println!("{}", t!("cli-gitignore-disabled"));
     }
     let stats = collect_loc_stats(loc_path, args)?;
     print_loc_summary(loc_path, &stats);
@@ -120,26 +143,53 @@ fn run_loc_mode(loc_path: &Path, args: &Args) -> Result<()> {
 
 fn print_loc_summary(loc_path: &Path, stats: &LocStats) {
     println!();
-    println!("📊 LOC SUMMARY");
-    println!("  📁 Target: {}", loc_path.display());
-    println!("  ✅ Files processed: {}", stats.processed_files);
-    println!("  ⏭️  Files skipped: {}", stats.skipped_files);
-    println!("  🧮 Total lines: {}", stats.total_lines);
-    println!("  🔤 Total characters: {}", stats.total_chars);
-    println!("  🤖 Estimated tokens: {}", stats.estimated_tokens);
+    println!("{}", t!("cli-loc-summary-title"));
+    println!(
+        "  {}",
+        t!(
+            "cli-loc-summary-target",
+            "path" => loc_path.display().to_string()
+        )
+    );
+    println!(
+        "  {}",
+        t!("cli-loc-files-processed", "count" => i18n::format_number(stats.processed_files as i64))
+    );
+    println!(
+        "  {}",
+        t!("cli-loc-files-skipped", "count" => i18n::format_number(stats.skipped_files as i64))
+    );
+    println!(
+        "  {}",
+        t!("cli-loc-total-lines", "count" => i18n::format_number(stats.total_lines as i64))
+    );
+    println!(
+        "  {}",
+        t!("cli-loc-total-chars", "count" => i18n::format_number(stats.total_chars as i64))
+    );
+    println!(
+        "  {}",
+        t!(
+            "cli-loc-estimated-tokens",
+            "count" => i18n::format_number(stats.estimated_tokens as i64)
+        )
+    );
     println!();
-    println!("📈 TOP 10 FILES WITH MOST LINES");
+    println!("{}", t!("cli-loc-top-files"));
     if stats.largest_files.is_empty() {
-        println!("  (no files counted)");
+        println!("{}", t!("cli-loc-no-files"));
         return;
     }
     for (index, entry) in stats.largest_files.iter().enumerate() {
         println!(
-            "  {:>2}. {} ({} lines, {})",
-            index + 1,
-            entry.path.display(),
-            entry.lines,
-            format_size(entry.size)
+            "{}",
+            t!(
+                "cli-loc-top-file",
+                "index" => format!("{:>2}", index + 1),
+                "path" => entry.path.display().to_string(),
+                "lines" => i18n::format_number(entry.lines as i64),
+                "size" => format_size(entry.size)
+            )
         );
     }
 }

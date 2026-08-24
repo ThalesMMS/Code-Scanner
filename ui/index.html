@@ -12,7 +12,12 @@
         <span class="brand-mark" aria-hidden="true" data-tauri-drag-region></span>
         <span class="brand-name" data-tauri-drag-region>Code Scanner</span>
       </div>
-      <button id="theme-toggle" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">
+      <div class="titlebar-actions">
+        <label class="lang-control">
+          <span class="visually-hidden" data-i18n="ui-language">Language</span>
+          <select id="language-select" aria-label="Language" data-i18n-aria-label="ui-language"></select>
+        </label>
+        <button id="theme-toggle" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme" data-i18n-title="ui-toggle-theme" data-i18n-aria-label="ui-toggle-theme">
         <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <circle cx="12" cy="12" r="4.2" />
           <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7" stroke-linecap="round" />
@@ -21,35 +26,36 @@
           <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5Z" stroke-linejoin="round" />
         </svg>
       </button>
+      </div>
     </div>
 
     <main class="app">
-      <section class="project-bar" aria-label="Project controls">
+      <section class="project-bar" aria-label="Project controls" data-i18n-aria-label="ui-project-controls-aria">
         <div class="project-path">
-          <label for="project-input">Project folder</label>
+          <label for="project-input" data-i18n="ui-project-folder">Project folder</label>
           <div class="path-control">
-            <input id="project-input" type="text" placeholder="Select a project folder" autocomplete="off" spellcheck="false" />
+            <input id="project-input" type="text" placeholder="Select a project folder" data-i18n-placeholder="ui-project-folder-placeholder" autocomplete="off" spellcheck="false" />
             <button type="button" class="btn btn-neutral" id="browse-project">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="M4 5h6l2 2h8v12H4V5Z" stroke-linejoin="round" />
               </svg>
-              Browse
+              <span data-i18n="ui-browse">Browse</span>
             </button>
           </div>
         </div>
         <div class="recent-control">
-          <label for="recent-projects">Recent</label>
+          <label for="recent-projects" data-i18n="ui-recent">Recent</label>
           <select id="recent-projects">
-            <option value="">No recent projects</option>
+            <option value="" data-i18n="ui-no-recent-projects">No recent projects</option>
           </select>
         </div>
         <div class="action-stack">
           <button type="button" class="btn btn-neutral" id="analyze-project">
-            <span class="btn-label">Analyze</span>
+            <span class="btn-label" data-i18n="ui-analyze">Analyze</span>
             <span class="spinner" aria-hidden="true"></span>
           </button>
           <button type="button" class="btn btn-primary" id="run-scan">
-            <span class="btn-label">Run Scan</span>
+            <span class="btn-label" data-i18n="ui-run-scan">Run Scan</span>
             <span class="spinner" aria-hidden="true"></span>
           </button>
         </div>
@@ -64,7 +70,7 @@
         <section class="panel overview-panel">
           <div class="project-heading">
             <div>
-              <p class="eyebrow">Active Project</p>
+              <p class="eyebrow" data-i18n="ui-active-project">Active Project</p>
               <h1 id="project-name">No project selected</h1>
               <p id="project-root" class="project-root">Choose a folder to begin.</p>
             </div>
@@ -73,27 +79,27 @@
           <div class="metric-grid">
             <div class="metric-cell">
               <span class="metric-value" id="metric-files">0</span>
-              <span class="metric-label">Files</span>
+              <span class="metric-label" data-i18n="ui-metric-files">Files</span>
             </div>
             <div class="metric-cell">
               <span class="metric-value" id="metric-lines">0</span>
-              <span class="metric-label">Lines</span>
+              <span class="metric-label" data-i18n="ui-metric-lines">Lines</span>
             </div>
             <div class="metric-cell metric-accent">
               <span class="metric-value" id="metric-tokens">0</span>
-              <span class="metric-label">Tokens</span>
+              <span class="metric-label" data-i18n="ui-metric-tokens">Tokens</span>
             </div>
             <div class="metric-cell">
               <span class="metric-value" id="metric-size">0 B</span>
-              <span class="metric-label">Text size</span>
+              <span class="metric-label" data-i18n="ui-metric-text-size">Text size</span>
             </div>
             <div class="metric-cell">
               <span class="metric-value" id="metric-skipped">0</span>
-              <span class="metric-label">Skipped</span>
+              <span class="metric-label" data-i18n="ui-metric-skipped">Skipped</span>
             </div>
             <div class="metric-cell">
               <span class="metric-value" id="metric-depth">0</span>
-              <span class="metric-label">Depth</span>
+              <span class="metric-label" data-i18n="ui-metric-depth">Depth</span>
             </div>
           </div>
         </section>
@@ -101,13 +107,13 @@
         <section class="panel composition-panel">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">Composition</p>
-              <h2>Extension Mix</h2>
+              <p class="eyebrow" data-i18n="ui-composition">Composition</p>
+              <h2 data-i18n="ui-extension-mix">Extension Mix</h2>
             </div>
             <span class="panel-kicker" id="composition-kicker">0 languages</span>
           </div>
           <div class="donut-layout">
-            <svg id="extension-donut" class="donut-chart" viewBox="0 0 100 100" role="img" aria-label="Extension token mix"></svg>
+            <svg id="extension-donut" class="donut-chart" viewBox="0 0 100 100" role="img" aria-label="Extension token mix" data-i18n-aria-label="ui-extension-token-mix-aria"></svg>
             <div class="legend-list" id="extension-legend"></div>
           </div>
         </section>
@@ -115,13 +121,13 @@
         <section class="panel largest-panel">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">Distribution</p>
-              <h2>Largest Files</h2>
+              <p class="eyebrow" data-i18n="ui-distribution">Distribution</p>
+              <h2 data-i18n="ui-largest-files">Largest Files</h2>
             </div>
-            <div class="segmented" role="tablist" aria-label="Largest files metric">
-              <button type="button" class="segment is-active" data-largest-mode="tokens">Tokens</button>
-              <button type="button" class="segment" data-largest-mode="lines">Lines</button>
-              <button type="button" class="segment" data-largest-mode="size">Size</button>
+            <div class="segmented" role="tablist" aria-label="Largest files metric" data-i18n-aria-label="ui-largest-files-metric-aria">
+              <button type="button" class="segment is-active" data-largest-mode="tokens" data-i18n="ui-segment-tokens">Tokens</button>
+              <button type="button" class="segment" data-largest-mode="lines" data-i18n="ui-segment-lines">Lines</button>
+              <button type="button" class="segment" data-largest-mode="size" data-i18n="ui-segment-size">Size</button>
             </div>
           </div>
           <ol class="rank-list" id="largest-list"></ol>
@@ -130,7 +136,7 @@
         <section class="panel readiness-panel">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">LLM Readiness</p>
+              <p class="eyebrow" data-i18n="ui-llm-readiness">LLM Readiness</p>
               <h2 id="readiness-title">Awaiting Analysis</h2>
             </div>
             <strong class="readiness-score" id="readiness-score">0</strong>
@@ -144,21 +150,21 @@
         <section class="panel diagnostics-panel">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">Scanner Diagnostics</p>
-              <h2>Inclusion Rules</h2>
+              <p class="eyebrow" data-i18n="ui-scanner-diagnostics">Scanner Diagnostics</p>
+              <h2 data-i18n="ui-inclusion-rules">Inclusion Rules</h2>
             </div>
           </div>
           <div class="diagnostic-grid">
             <div class="diagnostic-item">
-              <span class="diagnostic-label">Config</span>
+              <span class="diagnostic-label" data-i18n="ui-config">Config</span>
               <strong id="config-state">Default</strong>
             </div>
             <div class="diagnostic-item">
-              <span class="diagnostic-label">Gitignore</span>
+              <span class="diagnostic-label" data-i18n="ui-gitignore">Gitignore</span>
               <strong id="gitignore-state">Enabled</strong>
             </div>
             <div class="diagnostic-item">
-              <span class="diagnostic-label">Max file size</span>
+              <span class="diagnostic-label" data-i18n="ui-max-file-size">Max file size</span>
               <strong id="max-size-state">0 B</strong>
             </div>
           </div>
@@ -169,21 +175,21 @@
           <section class="panel options-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">Scan Setup</p>
-                <h2>Options</h2>
+                <p class="eyebrow" data-i18n="ui-scan-setup">Scan Setup</p>
+                <h2 data-i18n="ui-options">Options</h2>
               </div>
             </div>
             <div class="preset-grid" id="preset-grid">
-              <button type="button" class="preset is-active" data-preset="standard">Standard</button>
-              <button type="button" class="preset" data-preset="verbose">Verbose review</button>
-              <button type="button" class="preset" data-preset="split">Split-safe</button>
-              <button type="button" class="preset" data-preset="heavy">Ignore lock/heavy</button>
+              <button type="button" class="preset is-active" data-preset="standard" data-i18n="ui-standard">Standard</button>
+              <button type="button" class="preset" data-preset="verbose" data-i18n="ui-verbose-review">Verbose review</button>
+              <button type="button" class="preset" data-preset="split" data-i18n="ui-split-safe">Split-safe</button>
+              <button type="button" class="preset" data-preset="heavy" data-i18n="ui-ignore-lock-heavy">Ignore lock/heavy</button>
             </div>
             <div class="field">
-              <label for="output-input">Output folder</label>
+              <label for="output-input" data-i18n="ui-output-folder">Output folder</label>
               <div class="path-control compact">
-                <input id="output-input" type="text" placeholder="Report output folder" autocomplete="off" spellcheck="false" />
-                <button type="button" class="btn btn-neutral icon-only" id="browse-output" title="Choose output folder" aria-label="Choose output folder">
+                <input id="output-input" type="text" placeholder="Report output folder" data-i18n-placeholder="ui-output-placeholder" autocomplete="off" spellcheck="false" />
+                <button type="button" class="btn btn-neutral icon-only" id="browse-output" title="Choose output folder" aria-label="Choose output folder" data-i18n-title="ui-choose-output-folder" data-i18n-aria-label="ui-choose-output-folder">
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M4 5h6l2 2h8v12H4V5Z" stroke-linejoin="round" />
                   </svg>
@@ -193,28 +199,28 @@
             <label class="toggle">
               <input type="checkbox" id="verbose-option" />
               <span class="toggle-track"><span class="toggle-thumb"></span></span>
-              <span>Verbose report</span>
+              <span data-i18n="ui-verbose-report">Verbose report</span>
             </label>
             <label class="toggle">
               <input type="checkbox" id="no-gitignore-option" />
               <span class="toggle-track"><span class="toggle-thumb"></span></span>
-              <span>Ignore .gitignore</span>
+              <span data-i18n="ui-ignore-gitignore">Ignore .gitignore</span>
             </label>
             <div class="field">
-              <label for="ignore-input">Extensions to exclude</label>
+              <label for="ignore-input" data-i18n="ui-extensions-to-exclude">Extensions to exclude</label>
               <input id="ignore-input" type="text" placeholder="png jpg ipynb" autocomplete="off" spellcheck="false" />
             </div>
             <div class="field">
-              <label for="max-lines-input">Split output after N lines</label>
-              <input id="max-lines-input" type="number" min="1" placeholder="No limit" />
+              <label for="max-lines-input" data-i18n="ui-split-after-n-lines">Split output after N lines</label>
+              <input id="max-lines-input" type="number" min="1" placeholder="No limit" data-i18n-placeholder="ui-no-limit" />
             </div>
           </section>
 
           <section class="panel history-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">Local History</p>
-                <h2>Recent Runs</h2>
+                <p class="eyebrow" data-i18n="ui-local-history">Local History</p>
+                <h2 data-i18n="ui-recent-runs">Recent Runs</h2>
               </div>
             </div>
             <div class="history-list" id="history-list"></div>
@@ -223,8 +229,8 @@
           <section class="panel reports-panel">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">Output</p>
-                <h2>Saved Reports</h2>
+                <p class="eyebrow" data-i18n="ui-output">Output</p>
+                <h2 data-i18n="ui-saved-reports">Saved Reports</h2>
               </div>
             </div>
             <ul class="report-list" id="report-list"></ul>

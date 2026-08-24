@@ -27,7 +27,7 @@ pub fn is_binary(path: &Path) -> bool {
     buffer[..n].contains(&0)
 }
 
-// Present human-readable file sizes (e.g., 1.2 MB).
+// Present human-readable file sizes for the active locale (e.g., 1.2 MB).
 pub fn format_size(size: u64) -> String {
-    humansize::format_size(size, humansize::DECIMAL)
+    crate::i18n::format_size(size)
 }

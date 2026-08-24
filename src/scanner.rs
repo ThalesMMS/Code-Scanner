@@ -9,10 +9,11 @@
 
 use crate::cli::Args;
 use crate::config::{load_config, ProjectConfig};
+use crate::i18n;
 use crate::project::detect_project_type;
 use crate::utils::{format_size, is_binary};
+use crate::t;
 use anyhow::{Context, Result};
-use chrono::Local;
 use ignore::{Walk, WalkBuilder};
 use pathdiff::diff_paths;
 use std::collections::BTreeMap;
@@ -38,8 +39,12 @@ impl OutputReport {
         max_lines: Option<u64>,
     ) -> Result<Self> {
         let path = Self::path_for_part(output_dir, project_name, 1);
-        let file = File::create(&path)
-            .with_context(|| format!("Failed to create output file: {}", path.display()))?;
+        let file = File::create(&path).with_context(|| {
+            t!(
+                "cli-error-create-report",
+                "path" => path.display().to_string()
+            )
+        })?;
         let mut report = Self {
             output_dir: output_dir.to_path_buf(),
             project_name: project_name.to_owned(),
@@ -65,10 +70,9 @@ impl OutputReport {
         let project_name = self.project_name.clone();
         self.write_blank_line()?;
         self.write_line(&project_name)?;
-        let now = Local::now().format("%Y-%m-%d %H:%M:%S");
-        self.write_line(&now.to_string())?;
+        self.write_line(&i18n::format_timestamp(chrono::Local::now()))?;
         self.write_blank_line()?;
-        self.write_line("FOLDER STRUCTURE")?;
+        self.write_line(&t!("report-folder-structure"))?;
         self.write_blank_line()?;
         Ok(())
     }
@@ -78,17 +82,19 @@ impl OutputReport {
         let part = self.part;
         self.write_blank_line()?;
         self.write_line(&project_name)?;
-        let now = Local::now().format("%Y-%m-%d %H:%M:%S");
-        self.write_line(&now.to_string())?;
-        self.write_line(&format!("(continued — part {part})"))?;
+        self.write_line(&i18n::format_timestamp(chrono::Local::now()))?;
+        self.write_line(&t!(
+            "report-continued-part",
+            "part" => i18n::format_number(part as i64)
+        ))?;
         self.write_blank_line()?;
         self.write_file_contents_header()?;
         Ok(())
     }
 
     fn write_file_contents_header(&mut self) -> Result<()> {
-        self.write_line("📄 FILE CONTENTS")?;
-        self.write_line("═══════════════════════════════════════════════════════════════")?;
+        self.write_line(&t!("report-file-contents"))?;
+        self.write_line(&t!("report-contents-rule"))?;
         Ok(())
     }
 
@@ -106,8 +112,12 @@ impl OutputReport {
 
         self.part += 1;
         let path = Self::path_for_part(&self.output_dir, &self.project_name, self.part);
-        self.file = File::create(&path)
-            .with_context(|| format!("Failed to create output file: {}", path.display()))?;
+        self.file = File::create(&path).with_context(|| {
+            t!(
+                "cli-error-create-report",
+                "path" => path.display().to_string()
+            )
+        })?;
         self.paths.push(path);
         self.line_count = 0;
         self.write_continuation_header()?;
@@ -134,7 +144,10 @@ impl OutputReport {
 
     fn print_saved_paths(&self) {
         for path in &self.paths {
-            println!("  ✅ Saved to: {}", path.display());
+            println!(
+                "{}",
+                t!("cli-saved-to", "path" => path.display().to_string())
+            );
         }
     }
 }
@@ -166,7 +179,14 @@ pub fn process_project(
     }
 
     // Visible progress helps when scanning multiple folders.
-    println!("📦 Processing: {} ({})", project_name, project_type);
+    println!(
+        "{}",
+        t!(
+            "cli-processing",
+            "project" => project_name.as_str(),
+            "kind" => project_type.as_str()
+        )
+    );
 
     let mut report = OutputReport::create(
         output_dir,
@@ -300,7 +320,13 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
 
                 if size > config.max_file_size {
                     if args.verbose {
-                        println!("Ignoring {} (excessive size)", path.display());
+                        println!(
+                            "{}",
+                            t!(
+                                "cli-ignoring-excessive-size",
+                                "path" => path.display().to_string()
+                            )
+                        );
                     }
                     stats.skipped_files += 1;
                     continue;
@@ -330,7 +356,13 @@ pub fn collect_loc_stats(project_path: &Path, args: &Args) -> Result<LocStats> {
             }
             Err(err) => {
                 if args.verbose {
-                    eprintln!("Error reading input: {}", err);
+                    eprintln!(
+                        "{}",
+                        t!(
+                            "cli-error-reading-input",
+                            "error" => err.to_string()
+                        )
+                    );
                 }
             }
         }
@@ -401,7 +433,7 @@ pub fn analyze_project(project_path: &Path, args: &Args) -> Result<ProjectAnalys
                 analysis.tree.files += 1;
 
                 if config.ignore_files.contains(&file_name) {
-                    record_skipped_reason(&mut skipped_reasons, "ignored file");
+                    record_skipped_reason(&mut skipped_reasons, "skip-reason-ignored-file");
                     continue;
                 }
 
@@ -410,7 +442,7 @@ pub fn analyze_project(project_path: &Path, args: &Args) -> Result<ProjectAnalys
                     let whitelisted = config.code_extensions.contains(&file_name)
                         || (!trimmed.is_empty() && config.code_extensions.contains(trimmed));
                     if !whitelisted {
-                        record_skipped_reason(&mut skipped_reasons, "hidden file");
+                        record_skipped_reason(&mut skipped_reasons, "skip-reason-hidden-file");
                         continue;
                     }
                 }
@@ -421,13 +453,13 @@ pub fn analyze_project(project_path: &Path, args: &Args) -> Result<ProjectAnalys
                     .unwrap_or_default();
 
                 if config.ignore_extensions.contains(&ext) {
-                    record_skipped_reason(&mut skipped_reasons, "ignored extension");
+                    record_skipped_reason(&mut skipped_reasons, "skip-reason-ignored-extension");
                     continue;
                 }
 
                 if !ext.is_empty() && !config.code_extensions.contains(&ext) {
                     if !config.code_extensions.contains(&file_name) {
-                        record_skipped_reason(&mut skipped_reasons, "unsupported extension");
+                        record_skipped_reason(&mut skipped_reasons, "skip-reason-unsupported-extension");
                         continue;
                     }
                 }
@@ -435,19 +467,19 @@ pub fn analyze_project(project_path: &Path, args: &Args) -> Result<ProjectAnalys
                 let metadata = match path.metadata() {
                     Ok(m) => m,
                     Err(_) => {
-                        record_skipped_reason(&mut skipped_reasons, "metadata error");
+                        record_skipped_reason(&mut skipped_reasons, "skip-reason-metadata-error");
                         continue;
                     }
                 };
                 let size = metadata.len();
 
                 if size > config.max_file_size {
-                    record_skipped_reason(&mut skipped_reasons, "over max file size");
+                    record_skipped_reason(&mut skipped_reasons, "skip-reason-over-max-file-size");
                     continue;
                 }
 
                 if is_binary(path) {
-                    record_skipped_reason(&mut skipped_reasons, "binary file");
+                    record_skipped_reason(&mut skipped_reasons, "skip-reason-binary-file");
                     continue;
                 }
 
@@ -484,12 +516,12 @@ pub fn analyze_project(project_path: &Path, args: &Args) -> Result<ProjectAnalys
                         );
                     }
                     Err(_) => {
-                        record_skipped_reason(&mut skipped_reasons, "read error");
+                        record_skipped_reason(&mut skipped_reasons, "skip-reason-read-error");
                     }
                 }
             }
             Err(_) => {
-                record_skipped_reason(&mut skipped_reasons, "walk error");
+                record_skipped_reason(&mut skipped_reasons, "skip-reason-walk-error");
             }
         }
     }
@@ -701,7 +733,13 @@ fn collect_files(
                 // Enforce max file size to keep output manageable.
                 if metadata.len() > config.max_file_size {
                     if args.verbose {
-                        println!("Ignoring {} (excessive size)", relative_path.display());
+                        println!(
+                            "{}",
+                            t!(
+                                "cli-ignoring-excessive-size",
+                                "path" => relative_path.display().to_string()
+                            )
+                        );
                     }
                     stats.skipped += 1;
                     continue;
@@ -721,7 +759,13 @@ fn collect_files(
             }
             Err(err) => {
                 if args.verbose {
-                    eprintln!("Error reading input: {}", err);
+                    eprintln!(
+                        "{}",
+                        t!(
+                            "cli-error-reading-input",
+                            "error" => err.to_string()
+                        )
+                    );
                 }
             }
         }
@@ -744,37 +788,35 @@ fn write_file_contents(
         let relative_str = relative_path.to_string_lossy();
         let size = path
             .metadata()
-            .with_context(|| format!("Failed to read metadata of {}", relative_path.display()))?
+            .with_context(|| {
+                t!(
+                    "cli-error-metadata",
+                    "path" => relative_path.display().to_string()
+                )
+            })?
             .len();
 
         if args.verbose {
-            // Section header for each individual file.
-            report_write!(
-                report,
-                "┌─────────────────────────────────────────────────────────────"
-            )?;
-            report_write!(report, "│ 📄 {}", relative_str)?;
-            report_write!(report, "│ 📊 Size: {}", format_size(size))?;
-            report_write!(
-                report,
-                "├─────────────────────────────────────────────────────────────"
-            )?;
+            report.write_line(&t!("report-file-rule-top"))?;
+            report.write_line(&t!(
+                "report-file-name-verbose",
+                "path" => relative_str.as_ref()
+            ))?;
+            report.write_line(&t!(
+                "report-file-size-verbose",
+                "size" => format_size(size)
+            ))?;
+            report.write_line(&t!("report-file-rule-mid"))?;
         } else {
-            report_write!(report, "📄 {}", relative_str)?;
+            report.write_line(&t!("report-file-name", "path" => relative_str.as_ref()))?;
         }
 
         // Avoid dumping binary content which would clutter the report.
         if is_binary(path) {
             if args.verbose {
-                report_write!(
-                    report,
-                    "│ [Binary file or unsupported encoding - content omitted]"
-                )?;
+                report.write_line(&t!("report-binary-omitted-verbose"))?;
             } else {
-                report_write!(
-                    report,
-                    "[Binary file or unsupported encoding - content omitted]"
-                )?;
+                report.write_line(&t!("report-binary-omitted"))?;
             }
         } else {
             match fs::read_to_string(path) {
@@ -792,19 +834,16 @@ fn write_file_contents(
                 }
                 Err(_) => {
                     if args.verbose {
-                        report_write!(report, "│ [Error reading file as UTF-8 text]")?;
+                        report.write_line(&t!("report-utf8-error-verbose"))?;
                     } else {
-                        report_write!(report, "[Error reading file as UTF-8 text]")?;
+                        report.write_line(&t!("report-utf8-error"))?;
                     }
                 }
             }
         }
 
         if args.verbose {
-            report_write!(
-                report,
-                "└─────────────────────────────────────────────────────────────"
-            )?;
+            report.write_line(&t!("report-file-rule-bottom"))?;
             report.write_blank_line()?;
         } else {
             report.write_blank_line()?;
@@ -822,22 +861,21 @@ fn write_summary(
 ) -> Result<()> {
     // Final footer with a lightweight count of what happened.
     report.write_blank_line()?;
-    report_write!(
-        report,
-        "═══════════════════════════════════════════════════════════════"
-    )?;
-    report_write!(report, "📊 SUMMARY")?;
-    report_write!(report, "  ✅ Files processed: {}", processed_count)?;
-    report_write!(report, "  ⏭️  Files skipped (estimated): {}", stats.skipped)?;
-    report_write!(
-        report,
-        "  💾 Total content size: {}",
-        format_size(stats.total_size)
-    )?;
-    report_write!(
-        report,
-        "═══════════════════════════════════════════════════════════════"
-    )?;
+    report.write_line(&t!("report-contents-rule"))?;
+    report.write_line(&t!("report-summary-title"))?;
+    report.write_line(&t!(
+        "cli-report-files-processed",
+        "count" => i18n::format_number(processed_count as i64)
+    ))?;
+    report.write_line(&t!(
+        "report-files-skipped",
+        "count" => i18n::format_number(stats.skipped as i64)
+    ))?;
+    report.write_line(&t!(
+        "report-total-content-size",
+        "size" => format_size(stats.total_size)
+    ))?;
+    report.write_line(&t!("report-contents-rule"))?;
     Ok(())
 }
 

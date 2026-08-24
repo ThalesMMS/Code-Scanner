@@ -2,6 +2,27 @@
 
 Bundle a codebase into a single text report for audits, code reviews, and LLM prompts. This repository ships two independent scanners: a **Rust CLI** (compiled binary, LOC mode, CLI flags) and a **Bash script** (no Rust toolchain required). Pick the one that fits your environment—no wrapper CLI required.
 
+## Internationalization
+
+User-facing CLI, desktop UI, and Bash scanner strings live in Fluent catalogs under `i18n/`. **`i18n/en-US.ftl` is the key source of truth.** To add a language, copy that file to `i18n/<locale>.ftl` (for example `i18n/pt-BR.ftl`) and translate the values. Keep message IDs and placeholder names (`{ $count }`, `{ $path }`, `{ $project }`, `{ $kind }`) identical. Do not fork string literals in Rust, HTML, or TypeScript.
+
+Catalogs are embedded into the Rust library at compile time by globbing `i18n/*.ftl`, so a new locale compiles without changing Rust. Missing messages in a partial catalog fall back to `en-US`.
+
+Locale resolution:
+
+1. CLI: `--lang <locale>` → environment variable `CODE_SCANNER_LANG` → OS locale → `en-US`
+2. Desktop: `localStorage` key `code-scanner-lang` (next to `code-scanner-theme`) → OS locale → `en-US`
+3. Bash: `CODE_SCANNER_LANG` → `LANG` → `en-US`
+
+Close matches are accepted (`pt` → `pt-BR`, `en` → `en-US`) when a catalog for that language exists. Flag names (`--loc`, `--ignore`, `--lang`) stay in English. Generated report **source dumps** are not translated; operator-facing headers such as files processed are. Counts, file sizes, and report timestamps follow the active locale. The desktop UI sets `document.documentElement.lang` and uses `dir="rtl"` for Arabic, Hebrew, Persian, and Urdu.
+
+Useful CLI examples:
+
+```bash
+cargo run -- --lang pt-BR --loc ../my-project
+CODE_SCANNER_LANG=en-US cargo run -- --loc .
+```
+
 ## 30-second quickstart
 
 ```bash

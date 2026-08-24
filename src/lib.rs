@@ -8,6 +8,7 @@
 
 pub mod cli;
 pub mod config;
+pub mod i18n;
 pub mod project;
 pub mod scanner;
 pub mod utils;

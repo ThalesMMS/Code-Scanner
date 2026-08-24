@@ -27,6 +27,7 @@ fn collect_loc_stats_counts_lines_and_skips_ignored() {
         verbose: false,
         ignore: vec![],
         max_output_lines: None,
+        lang: None,
     };
 
     let stats = collect_loc_stats(root, &args).expect("loc stats");
@@ -60,6 +61,7 @@ fn split_output_rotates_before_next_source_file() {
         verbose: false,
         ignore: vec![],
         max_output_lines: Some(8),
+        lang: None,
     };
 
     process_project(&project, &output, &args).expect("process project");
@@ -108,6 +110,7 @@ fn split_output_keeps_oversized_source_file_in_one_part() {
         verbose: false,
         ignore: vec![],
         max_output_lines: Some(5),
+        lang: None,
     };
 
     process_project(&project, &output, &args).expect("process project");

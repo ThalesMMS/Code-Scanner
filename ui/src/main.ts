@@ -2,6 +2,18 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import {
+  applyStaticTranslations,
+  availableLocales,
+  currentLocale,
+  formatBytes,
+  formatCompact,
+  formatCount,
+  initI18n,
+  localePreference,
+  setLocale,
+  t,
+} from "./i18n";
 import "./style.css";
 
 interface ScanOptionsPayload {
@@ -118,6 +130,13 @@ const PRESETS: Record<PresetId, ScanOptionsPayload> = {
   },
 };
 
+const PRESET_I18N: Record<PresetId, string> = {
+  standard: "ui-standard",
+  verbose: "ui-verbose-review",
+  split: "ui-split-safe",
+  heavy: "ui-ignore-lock-heavy",
+};
+
 let currentAnalysis: ProjectAnalysis | null = null;
 let largestMode: LargestMode = "tokens";
 let historyRecords: HistoryRecord[] = [];
@@ -132,10 +151,6 @@ function byId<T extends Element>(id: string): T {
 
 function input(id: string): HTMLInputElement {
   return byId<HTMLInputElement>(id);
-}
-
-function formatCount(value: number): string {
-  return value.toLocaleString();
 }
 
 function parseIgnoreList(raw: string): string[] {
@@ -247,13 +262,13 @@ function setProjectPath(path: string): void {
 }
 
 function renderAnalysis(analysis: ProjectAnalysis): void {
-  byId("project-name").textContent = analysis.projectName || "Unnamed project";
+  byId("project-name").textContent = analysis.projectName || t("ui-unnamed-project");
   byId("project-type").textContent = analysis.projectType;
   byId("project-root").textContent = analysis.rootPath;
   byId("metric-files").textContent = formatCount(analysis.processedFiles);
   byId("metric-lines").textContent = formatCount(analysis.totalLines);
   byId("metric-tokens").textContent = formatCount(analysis.estimatedTokens);
-  byId("metric-size").textContent = analysis.totalSizeHuman;
+  byId("metric-size").textContent = formatBytes(analysis.totalSize);
   byId("metric-skipped").textContent = formatCount(analysis.skippedFiles);
   byId("metric-depth").textContent = formatCount(analysis.tree.maxDepth);
 
@@ -264,29 +279,31 @@ function renderAnalysis(analysis: ProjectAnalysis): void {
 }
 
 function renderCachedRecord(record: HistoryRecord): void {
-  byId("project-name").textContent = record.projectName || "Recent project";
-  byId("project-type").textContent = record.projectType || "Generic";
+  byId("project-name").textContent = record.projectName || t("ui-recent-project");
+  byId("project-type").textContent = record.projectType || t("ui-project-type-generic");
   byId("project-root").textContent = record.path;
   byId("metric-files").textContent = formatCount(record.summary?.processedFiles ?? 0);
   byId("metric-lines").textContent = formatCount(record.summary?.totalLines ?? 0);
   byId("metric-tokens").textContent = formatCount(record.summary?.estimatedTokens ?? 0);
-  byId("metric-size").textContent = record.summary?.totalSizeHuman ?? "0 B";
+  byId("metric-size").textContent = record.summary?.totalSizeHuman ?? t("ui-zero-bytes");
   byId("metric-skipped").textContent = formatCount(record.summary?.skippedFiles ?? 0);
-  byId("metric-depth").textContent = "0";
-  renderEmptyComposition("Analyze to refresh");
-  renderEmptyList("largest-list", "Analyze to refresh file distribution.");
-  renderEmptyList("readiness-list", "Analyze to refresh readiness.");
-  renderEmptyList("skipped-list", "Analyze to refresh diagnostics.");
+  byId("metric-depth").textContent = formatCount(0);
+  renderEmptyComposition(t("ui-analyze-to-refresh"));
+  renderEmptyList("largest-list", t("ui-analyze-to-refresh-distribution"));
+  renderEmptyList("readiness-list", t("ui-analyze-to-refresh-readiness"));
+  renderEmptyList("skipped-list", t("ui-analyze-to-refresh-diagnostics"));
   renderReports(record.outputPaths);
 }
 
 function renderComposition(analysis: ProjectAnalysis): void {
   const entries = analysis.extensionBreakdown.slice(0, 8);
   const total = entries.reduce((sum, entry) => sum + entry.estimatedTokens, 0);
-  byId("composition-kicker").textContent = `${analysis.extensionBreakdown.length.toLocaleString()} groups`;
+  byId("composition-kicker").textContent = t("ui-groups-count", {
+    count: analysis.extensionBreakdown.length,
+  });
 
   if (entries.length === 0 || total === 0) {
-    renderEmptyComposition("No source files");
+    renderEmptyComposition(t("ui-no-source-files"));
     return;
   }
 
@@ -328,7 +345,7 @@ function renderComposition(analysis: ProjectAnalysis): void {
   caption.setAttribute("x", "50");
   caption.setAttribute("y", "61");
   caption.setAttribute("class", "donut-caption");
-  caption.textContent = "tokens";
+  caption.textContent = t("ui-donut-tokens");
   svg.appendChild(caption);
 
   const legend = byId("extension-legend");
@@ -348,7 +365,7 @@ function renderComposition(analysis: ProjectAnalysis): void {
 
     const meta = document.createElement("span");
     meta.className = "legend-meta";
-    meta.textContent = `${percent}% - ${entry.files.toLocaleString()} files`;
+    meta.textContent = t("ui-legend-files", { percent, files: entry.files });
 
     item.append(swatch, label, meta);
     legend.appendChild(item);
@@ -376,7 +393,7 @@ function renderEmptyComposition(message: string): void {
 
 function renderLargestFiles(): void {
   if (!currentAnalysis) {
-    renderEmptyList("largest-list", "Analyze a project to populate file distribution.");
+    renderEmptyList("largest-list", t("ui-analyze-to-populate"));
     return;
   }
 
@@ -391,7 +408,7 @@ function renderLargestFiles(): void {
   list.replaceChildren();
 
   if (entries.length === 0) {
-    list.appendChild(emptyMessage("No files matched the scanner rules."));
+    list.appendChild(emptyMessage(t("ui-no-files-matched")));
     return;
   }
 
@@ -425,7 +442,7 @@ function renderLargestFiles(): void {
 
     const meta = document.createElement("span");
     meta.className = "rank-meta";
-    meta.textContent = largestMode === "size" ? entry.sizeHuman : formatCount(value);
+    meta.textContent = largestMode === "size" ? formatBytes(entry.size) : formatCount(value);
 
     li.append(rank, body, meta);
     list.appendChild(li);
@@ -442,10 +459,10 @@ function renderReadiness(analysis: ProjectAnalysis, options: ScanOptionsPayload)
   const score = readinessScore(analysis, options);
   const title =
     analysis.estimatedTokens < 60000
-      ? "Compact Prompt"
+      ? t("ui-readiness-compact")
       : analysis.estimatedTokens < 120000
-        ? "Review-sized Prompt"
-        : "Large Context";
+        ? t("ui-readiness-review")
+        : t("ui-readiness-large");
 
   byId("readiness-title").textContent = title;
   byId("readiness-score").textContent = String(score);
@@ -481,43 +498,61 @@ function readinessScore(analysis: ProjectAnalysis, options: ScanOptionsPayload):
 }
 
 function readinessInsights(analysis: ProjectAnalysis, options: ScanOptionsPayload): string[] {
-  const insights = [`${formatCount(analysis.estimatedTokens)} estimated tokens across ${formatCount(analysis.processedFiles)} files.`];
+  const insights = [
+    t("ui-insight-tokens-files", {
+      tokens: formatCount(analysis.estimatedTokens),
+      files: formatCount(analysis.processedFiles),
+    }),
+  ];
 
   if (options.maxOutputLines) {
-    insights.push(`Split output is active at ${formatCount(options.maxOutputLines)} lines per report part.`);
+    insights.push(
+      t("ui-insight-split-active", { lines: formatCount(options.maxOutputLines) }),
+    );
   } else if (analysis.totalLines > SPLIT_SAFE_LINES) {
-    insights.push(`Set split output near ${formatCount(SPLIT_SAFE_LINES)} lines to reduce oversized reports.`);
+    insights.push(t("ui-insight-split-suggest", { lines: formatCount(SPLIT_SAFE_LINES) }));
   } else {
-    insights.push("Split output is optional for the current line count.");
+    insights.push(t("ui-insight-split-optional"));
   }
 
   const topFile = analysis.largestByTokens[0];
   if (topFile) {
-    insights.push(`${topFile.path} is the largest token contributor at ${formatCount(topFile.estimatedTokens)} tokens.`);
+    insights.push(
+      t("ui-insight-top-file", {
+        path: topFile.path,
+        tokens: formatCount(topFile.estimatedTokens),
+      }),
+    );
   }
 
   const topExtension = analysis.extensionBreakdown[0];
   if (topExtension && analysis.estimatedTokens > 0) {
     const share = Math.round((topExtension.estimatedTokens / analysis.estimatedTokens) * 100);
-    insights.push(`${topExtension.extension} files account for ${share}% of estimated tokens.`);
+    insights.push(
+      t("ui-insight-top-extension", { extension: topExtension.extension, percent: share }),
+    );
   }
 
   if (options.noGitignore) {
-    insights.push(".gitignore is disabled, so generated or vendored files may enter the scan.");
+    insights.push(t("ui-insight-gitignore-disabled"));
   }
 
   return insights;
 }
 
 function renderDiagnostics(analysis: ProjectAnalysis): void {
-  byId("config-state").textContent = analysis.config.configPresent ? "Project config" : "Defaults";
-  byId("gitignore-state").textContent = analysis.config.gitignoreEnabled ? "Enabled" : "Disabled";
-  byId("max-size-state").textContent = analysis.config.maxFileSizeHuman;
+  byId("config-state").textContent = analysis.config.configPresent
+    ? t("ui-project-config")
+    : t("ui-defaults");
+  byId("gitignore-state").textContent = analysis.config.gitignoreEnabled
+    ? t("ui-enabled")
+    : t("ui-disabled");
+  byId("max-size-state").textContent = formatBytes(analysis.config.maxFileSize);
 
   const list = byId("skipped-list");
   list.replaceChildren();
   if (analysis.skippedReasons.length === 0) {
-    list.appendChild(emptyMessage("No skipped files."));
+    list.appendChild(emptyMessage(t("ui-no-skipped-files")));
     return;
   }
 
@@ -525,7 +560,7 @@ function renderDiagnostics(analysis: ProjectAnalysis): void {
   analysis.skippedReasons.forEach((entry) => {
     const li = document.createElement("li");
     const label = document.createElement("span");
-    label.textContent = entry.reason;
+    label.textContent = t(entry.reason);
     const count = document.createElement("strong");
     count.textContent = formatCount(entry.files);
     const bar = document.createElement("div");
@@ -543,7 +578,7 @@ function renderReports(paths: string[]): void {
   list.replaceChildren();
 
   if (paths.length === 0) {
-    list.appendChild(emptyMessage("No saved reports yet."));
+    list.appendChild(emptyMessage(t("ui-no-saved-reports")));
     return;
   }
 
@@ -559,7 +594,7 @@ function renderReports(paths: string[]): void {
     const reveal = document.createElement("button");
     reveal.type = "button";
     reveal.className = "icon-btn mini";
-    reveal.title = "Reveal in Finder";
+    reveal.title = t("ui-reveal-in-finder");
     reveal.innerHTML = folderIcon();
     reveal.addEventListener("click", () => {
       revealItemInDir(path).catch((err) => showError(String(err)));
@@ -568,13 +603,13 @@ function renderReports(paths: string[]): void {
     const copy = document.createElement("button");
     copy.type = "button";
     copy.className = "icon-btn mini";
-    copy.title = "Copy path";
+    copy.title = t("ui-copy-path");
     copy.innerHTML = copyIcon();
     copy.addEventListener("click", () => {
       navigator.clipboard
         .writeText(path)
-        .then(() => setStatus("Report path copied"))
-        .catch(() => showError("Could not copy the report path."));
+        .then(() => setStatus(t("ui-status-report-copied")))
+        .catch(() => showError(t("ui-error-copy-path")));
     });
 
     actions.append(reveal, copy);
@@ -592,12 +627,6 @@ function emptyMessage(message: string): HTMLElement {
   el.className = "empty-message";
   el.textContent = message;
   return el;
-}
-
-function formatCompact(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${Math.round(value / 1_000)}K`;
-  return String(value);
 }
 
 function loadHistory(): HistoryRecord[] {
@@ -637,12 +666,12 @@ function renderHistory(): void {
   if (historyRecords.length === 0) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = "No recent projects";
+    option.textContent = t("ui-no-recent-projects");
     select.appendChild(option);
   } else {
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = "Choose recent project";
+    placeholder.textContent = t("ui-choose-recent-project");
     select.appendChild(placeholder);
     historyRecords.forEach((record) => {
       const option = document.createElement("option");
@@ -655,7 +684,7 @@ function renderHistory(): void {
   const list = byId("history-list");
   list.replaceChildren();
   if (historyRecords.length === 0) {
-    list.appendChild(emptyMessage("No local history yet."));
+    list.appendChild(emptyMessage(t("ui-no-local-history")));
     return;
   }
 
@@ -668,8 +697,10 @@ function renderHistory(): void {
     const name = document.createElement("strong");
     name.textContent = record.projectName || record.path;
     const meta = document.createElement("span");
-    const tokens = record.summary ? `${formatCompact(record.summary.estimatedTokens)} tokens` : "not analyzed";
-    meta.textContent = `${record.projectType || "Generic"} - ${tokens}`;
+    const tokens = record.summary
+      ? t("ui-history-tokens", { tokens: formatCompact(record.summary.estimatedTokens) })
+      : t("ui-not-analyzed");
+    meta.textContent = `${record.projectType || t("ui-project-type-generic")} - ${tokens}`;
     const path = document.createElement("small");
     path.textContent = record.path;
     button.append(name, meta, path);
@@ -682,19 +713,19 @@ function loadHistoryRecord(record: HistoryRecord): void {
   setProjectPath(record.path);
   applyOptions(record.options);
   renderCachedRecord(record);
-  setStatus("Recent project loaded");
+  setStatus(t("ui-status-recent-loaded"));
 }
 
 async function handleAnalyze(): Promise<void> {
   const path = input("project-input").value.trim();
   if (!path) {
-    showError("Choose a project folder before analyzing.");
+    showError(t("ui-error-choose-folder-analyze"));
     return;
   }
 
   hideError();
   setLoading("analyze", true);
-  setStatus("Analyzing project");
+  setStatus(t("ui-status-analyzing"));
 
   try {
     const options = getOptions();
@@ -712,10 +743,10 @@ async function handleAnalyze(): Promise<void> {
       summary: summaryFromAnalysis(analysis),
       outputPaths: previousOutputs,
     });
-    setStatus(`Analyzed ${formatCount(analysis.processedFiles)} files`);
+    setStatus(t("ui-status-analyzed-files", { count: formatCount(analysis.processedFiles) }));
   } catch (err) {
-    showError(typeof err === "string" ? err : "Could not analyze this project.");
-    setStatus("Analysis failed");
+    showError(typeof err === "string" ? err : t("ui-error-analyze"));
+    setStatus(t("ui-status-analysis-failed"));
   } finally {
     setLoading("analyze", false);
   }
@@ -724,7 +755,7 @@ async function handleAnalyze(): Promise<void> {
 async function handleRunScan(): Promise<void> {
   const inputDir = input("project-input").value.trim();
   if (!inputDir) {
-    showError("Choose a project folder before running a scan.");
+    showError(t("ui-error-choose-folder-scan"));
     return;
   }
 
@@ -735,7 +766,7 @@ async function handleRunScan(): Promise<void> {
 
   hideError();
   setLoading("scan", true);
-  setStatus("Running scan");
+  setStatus(t("ui-status-scanning"));
 
   try {
     const outputDir = outputInput.value.trim();
@@ -752,10 +783,10 @@ async function handleRunScan(): Promise<void> {
       summary: currentAnalysis ? summaryFromAnalysis(currentAnalysis) : existing?.summary ?? null,
       outputPaths: outcome.outputPaths,
     });
-    setStatus(`Saved ${outcome.outputPaths.length.toLocaleString()} report file${outcome.outputPaths.length === 1 ? "" : "s"}`);
+    setStatus(t("ui-status-saved-reports", { count: outcome.outputPaths.length }));
   } catch (err) {
-    showError(typeof err === "string" ? err : "Could not run the scan.");
-    setStatus("Scan failed");
+    showError(typeof err === "string" ? err : t("ui-error-scan"));
+    setStatus(t("ui-status-scan-failed"));
   } finally {
     setLoading("scan", false);
   }
@@ -766,7 +797,7 @@ function bindEvents(): void {
     const folder = await chooseFolder();
     if (!folder) return;
     setProjectPath(folder);
-    setStatus("Project selected");
+    setStatus(t("ui-status-project-selected"));
   });
 
   byId<HTMLButtonElement>("browse-output").addEventListener("click", async () => {
@@ -793,7 +824,7 @@ function bindEvents(): void {
       const preset = button.dataset.preset as PresetId;
       applyOptions(PRESETS[preset]);
       syncPresetState(preset);
-      setStatus(`${button.textContent?.trim() ?? "Preset"} preset applied`);
+      setStatus(t("ui-status-preset-applied", { preset: t(PRESET_I18N[preset]) }));
       if (currentAnalysis) {
         renderReadiness(currentAnalysis, getOptions());
       }
@@ -831,16 +862,104 @@ function copyIcon(): string {
 function renderInitialState(): void {
   applyOptions(PRESETS.standard);
   syncPresetState("standard");
-  renderEmptyComposition("No analysis yet");
-  renderEmptyList("largest-list", "Analyze a project to populate file distribution.");
-  renderEmptyList("readiness-list", "Analyze a project to calculate prompt readiness.");
-  renderEmptyList("skipped-list", "Analyze a project to inspect skipped files.");
+  byId("project-name").textContent = t("ui-no-project-selected");
+  byId("project-root").textContent = t("ui-choose-folder");
+  byId("project-type").textContent = t("ui-project-type-generic");
+  byId("config-state").textContent = t("ui-defaults");
+  byId("gitignore-state").textContent = t("ui-enabled");
+  setStatus(t("ui-idle"));
+  renderEmptyComposition(t("ui-no-analysis-yet"));
+  renderEmptyList("largest-list", t("ui-analyze-to-populate"));
+  renderEmptyList("readiness-list", t("ui-analyze-to-calculate-readiness"));
+  renderEmptyList("skipped-list", t("ui-analyze-to-inspect-skipped"));
+  byId("readiness-title").textContent = t("ui-awaiting-analysis");
   renderReports([]);
   historyRecords = loadHistory();
   renderHistory();
 }
 
+function localeLabel(tag: string): string {
+  try {
+    return new Intl.DisplayNames([currentLocale(), tag], { type: "language" }).of(tag) ?? tag;
+  } catch {
+    return tag;
+  }
+}
+
+async function syncRustLocale(preference: string | null): Promise<void> {
+  try {
+    await invoke("set_ui_locale", {
+      locale: !preference || preference === "system" ? null : preference,
+    });
+  } catch {
+    // Browser preview without Tauri.
+  }
+}
+
+function populateLanguageSelect(): void {
+  const select = byId<HTMLSelectElement>("language-select");
+  select.replaceChildren();
+  const system = document.createElement("option");
+  system.value = "system";
+  system.textContent = t("ui-language-system");
+  select.appendChild(system);
+  availableLocales().forEach((locale) => {
+    const option = document.createElement("option");
+    option.value = locale;
+    option.textContent = localeLabel(locale);
+    select.appendChild(option);
+  });
+  const stored = localePreference();
+  select.value = stored && stored !== "system" ? stored : "system";
+}
+
+function rerenderForLocale(): void {
+  applyStaticTranslations();
+  populateLanguageSelect();
+  if (currentAnalysis) {
+    renderAnalysis(currentAnalysis);
+    const outputs =
+      historyRecords.find((record) => record.path === currentAnalysis?.rootPath)?.outputPaths ?? [];
+    renderReports(outputs);
+  } else {
+    const path = input("project-input").value.trim();
+    const record = historyRecords.find((item) => item.path === path);
+    if (record) {
+      renderCachedRecord(record);
+    } else {
+      byId("project-name").textContent = t("ui-no-project-selected");
+      byId("project-root").textContent = t("ui-choose-folder");
+      byId("project-type").textContent = t("ui-project-type-generic");
+      byId("config-state").textContent = t("ui-defaults");
+      byId("gitignore-state").textContent = t("ui-enabled");
+      renderEmptyComposition(t("ui-no-analysis-yet"));
+      renderEmptyList("largest-list", t("ui-analyze-to-populate"));
+      renderEmptyList("readiness-list", t("ui-analyze-to-calculate-readiness"));
+      renderEmptyList("skipped-list", t("ui-analyze-to-inspect-skipped"));
+      byId("readiness-title").textContent = t("ui-awaiting-analysis");
+    }
+  }
+  renderHistory();
+  const status = byId("status-pill").textContent;
+  if (!status || status === "Idle" || status === t("ui-idle")) {
+    setStatus(t("ui-idle"));
+  }
+}
+
+function initLanguage(): void {
+  initI18n();
+  populateLanguageSelect();
+  void syncRustLocale(localePreference());
+  byId<HTMLSelectElement>("language-select").addEventListener("change", (event) => {
+    const value = (event.currentTarget as HTMLSelectElement).value;
+    setLocale(value);
+    void syncRustLocale(value);
+    rerenderForLocale();
+  });
+}
+
 function main(): void {
+  initLanguage();
   initTheme();
   initTitlebarDrag();
   renderInitialState();

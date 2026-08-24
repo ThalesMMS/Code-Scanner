@@ -1,0 +1,261 @@
+# Code Scanner — العربية (الفصحى المناسبة لواجهة الاستخدام)
+
+app-name = Code Scanner
+app-banner =
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║               RUST CODE SCANNER (UNIFIED)                     ║
+    ╚═══════════════════════════════════════════════════════════════╝
+app-about = يجمع قاعدة الشفرة في تقرير نصي واحد للتدقيق ومراجعة التعليمات البرمجية ومطالبات نماذج اللغة الكبيرة.
+
+cli-arg-input-help = مجلد الإدخال (المشروع المراد فحصه)
+cli-arg-output-help = مجلد الإخراج للتقارير
+cli-arg-loc-help = وضع LOC: يحسب ملخص الأسطر والرموز للمسار المستهدف
+cli-arg-no-gitignore-help = تجاهل ملف .gitignore الخاص بالمشروع
+cli-arg-verbose-help = الوضع التفصيلي
+cli-arg-ignore-help = امتدادات الملفات المطلوب تجاهلها (مثل: --ignore .ts .js .json)
+cli-arg-max-output-lines-help = تقسيم الإخراج إلى عدة ملفات بعد هذا العدد من الأسطر (دون قطع ملف المصدر في المنتصف)
+cli-arg-lang-help = لغة رسائل واجهة سطر الأوامر (مثل en-US أو ar-SA)
+
+cli-label-input = 📍 الإدخال: { $path }
+cli-label-output = 📍 الإخراج: { $path }
+cli-max-output-lines = 📄 الحد الأقصى لأسطر الإخراج لكل ملف: { $count }
+cli-default-dir-created =
+    ℹ️  تم إنشاء مجلد الإدخال الافتراضي في: { $path }
+    أضف المشاريع التي تريد تحليلها داخل هذا المجلد ثم شغّل الأمر مجددًا.
+cli-completed = ✨ اكتمل!
+cli-no-subdirectories = ℹ️  لم يُعثر على مجلدات فرعية. تتم معالجة الجذر كمشروع واحد.
+cli-loc-mode = 📏 وضع LOC
+cli-loc-target = 📍 الهدف: { $path }
+cli-loc-summary-target = 📁 الهدف: { $path }
+cli-gitignore-disabled = ⚠️  تم تعطيل .gitignore (--no-gitignore)
+cli-loc-summary-title = 📊 ملخص LOC
+cli-loc-files-processed = ✅ الملفات المُعالَجة: { $count }
+cli-loc-files-skipped = ⏭️  الملفات المتجاهَلة: { $count }
+cli-loc-total-lines = 🧮 إجمالي الأسطر: { $count }
+cli-loc-total-chars = 🔤 إجمالي المحارف: { $count }
+cli-loc-estimated-tokens = 🤖 الرموز التقديرية: { $count }
+cli-loc-top-files = 📈 أعلى 10 ملفات بعدد الأسطر
+cli-loc-no-files =   (لم تُحصَ أي ملفات)
+cli-loc-top-file =   { $index }. { $path } ({ $lines } أسطر، { $size })
+cli-loc-dir-not-found = لم يُعثر على مجلد وضع LOC: { $path }
+cli-processing = 📦 جارٍ المعالجة: { $project } ({ $kind })
+cli-saved-to =   ✅ حُفظ في: { $path }
+cli-ignoring-excessive-size = تجاهل { $path } (حجم مفرط)
+cli-error-reading-input = خطأ في قراءة الإدخال: { $error }
+cli-error-input-not-found = لم يُعثر على مجلد الإدخال: { $path }
+cli-error-create-input = تعذّر إنشاء مجلد الإدخال: { $path }
+cli-error-create-output = تعذّر إنشاء مجلد الإخراج
+cli-error-create-report = تعذّر إنشاء ملف الإخراج: { $path }
+cli-error-metadata = تعذّر قراءة بيانات { $path }
+cli-report-files-processed =   ✅ الملفات المُعالَجة: { $count }
+
+report-folder-structure = هيكل المجلدات
+report-file-contents = 📄 محتويات الملفات
+report-contents-rule = ═══════════════════════════════════════════════════════════════
+report-continued-part = (متابعة — الجزء { $part })
+report-file-rule-top = ┌─────────────────────────────────────────────────────────────
+report-file-name-verbose = │ 📄 { $path }
+report-file-size-verbose = │ 📊 الحجم: { $size }
+report-file-rule-mid = ├─────────────────────────────────────────────────────────────
+report-file-rule-bottom = └─────────────────────────────────────────────────────────────
+report-file-name = 📄 { $path }
+report-binary-omitted-verbose = │ [ملف ثنائي أو ترميز غير مدعوم - تم حذف المحتوى]
+report-binary-omitted = [ملف ثنائي أو ترميز غير مدعوم - تم حذف المحتوى]
+report-utf8-error-verbose = │ [خطأ في قراءة الملف كنص UTF-8]
+report-utf8-error = [خطأ في قراءة الملف كنص UTF-8]
+report-summary-title = 📊 الملخص
+report-files-skipped =   ⏭️  الملفات المتجاهَلة (تقديري): { $count }
+report-total-content-size =   💾 إجمالي حجم المحتوى: { $size }
+
+skip-reason-ignored-file = ملف متجاهَل
+skip-reason-hidden-file = ملف مخفي
+skip-reason-ignored-extension = امتداد متجاهَل
+skip-reason-unsupported-extension = امتداد غير مدعوم
+skip-reason-metadata-error = خطأ في البيانات الوصفية
+skip-reason-over-max-file-size = تجاوز الحد الأقصى لحجم الملف
+skip-reason-binary-file = ملف ثنائي
+skip-reason-read-error = خطأ في القراءة
+skip-reason-walk-error = خطأ في التجول
+
+tauri-error-input-missing = مجلد الإدخال غير موجود: { $path }
+tauri-error-folder-missing = المجلد غير موجود: { $path }
+tauri-error-running-app = خطأ أثناء تشغيل تطبيق Code Scanner
+
+ui-toggle-theme = تبديل المظهر
+ui-project-folder = مجلد المشروع
+ui-project-folder-placeholder = اختر مجلد مشروع
+ui-browse = استعراض
+ui-recent = الأخيرة
+ui-no-recent-projects = لا توجد مشاريع أخيرة
+ui-analyze = تحليل
+ui-run-scan = تشغيل الفحص
+ui-idle = خامل
+ui-project-controls-aria = عناصر التحكم بالمشروع
+ui-active-project = المشروع النشط
+ui-no-project-selected = لم يُحدَّد مشروع
+ui-choose-folder = اختر مجلدًا للبدء.
+ui-project-type-generic = عام
+ui-metric-files = الملفات
+ui-metric-lines = الأسطر
+ui-metric-tokens = الرموز
+ui-metric-text-size = حجم النص
+ui-metric-skipped = المتجاهَلة
+ui-metric-depth = العمق
+ui-composition = التركيب
+ui-extension-mix = مزيج الامتدادات
+ui-groups-count = { $count } مجموعات
+ui-extension-token-mix-aria = مزيج رموز الامتدادات
+ui-distribution = التوزيع
+ui-largest-files = أكبر الملفات
+ui-largest-files-metric-aria = مقياس أكبر الملفات
+ui-segment-tokens = الرموز
+ui-segment-lines = الأسطر
+ui-segment-size = الحجم
+ui-llm-readiness = جاهزية LLM
+ui-awaiting-analysis = في انتظار التحليل
+ui-scanner-diagnostics = تشخيص الماسح
+ui-inclusion-rules = قواعد التضمين
+ui-config = الإعداد
+ui-gitignore = Gitignore
+ui-max-file-size = الحد الأقصى لحجم الملف
+ui-scan-setup = إعداد الفحص
+ui-options = الخيارات
+ui-standard = قياسي
+ui-verbose-review = مراجعة تفصيلية
+ui-split-safe = تقسيم آمن
+ui-ignore-lock-heavy = تجاهل الملفات الثقيلة والقفل
+ui-output-folder = مجلد الإخراج
+ui-output-placeholder = مجلد إخراج التقرير
+ui-choose-output-folder = اختر مجلد الإخراج
+ui-verbose-report = تقرير تفصيلي
+ui-ignore-gitignore = تجاهل .gitignore
+ui-extensions-to-exclude = الامتدادات المطلوب استبعادها
+ui-split-after-n-lines = تقسيم الإخراج بعد N أسطر
+ui-no-limit = بلا حد
+ui-local-history = السجل المحلي
+ui-recent-runs = التشغيلات الأخيرة
+ui-output = الإخراج
+ui-saved-reports = التقارير المحفوظة
+ui-status-analyzing = جارٍ تحليل المشروع
+ui-status-scanning = جارٍ الفحص
+ui-status-analysis-failed = فشل التحليل
+ui-status-scan-failed = فشل الفحص
+ui-status-recent-loaded = تم تحميل مشروع أخير
+ui-status-report-copied = نُسخ مسار التقرير
+ui-unnamed-project = مشروع بلا اسم
+ui-recent-project = مشروع أخير
+ui-project-config = إعداد المشروع
+ui-defaults = الافتراضيات
+ui-enabled = مفعّل
+ui-disabled = معطّل
+ui-saved-reports-count = { $count ->
+    [zero] لا تقارير محفوظة
+    [one] تقرير محفوظ واحد
+    [two] تقريران محفوظان
+    [few] { $count } تقارير محفوظة
+    [many] { $count } تقريرًا محفوظًا
+   *[other] { $count } تقرير محفوظ
+}
+ui-language = اللغة
+ui-language-system = النظام
+ui-analyze-to-refresh = حلّل للتحديث
+ui-analyze-to-refresh-distribution = حلّل لتحديث توزيع الملفات.
+ui-analyze-to-refresh-readiness = حلّل لتحديث الجاهزية.
+ui-analyze-to-refresh-diagnostics = حلّل لتحديث التشخيص.
+ui-no-source-files = لا توجد ملفات مصدر
+ui-donut-tokens = رموز
+ui-legend-files = { $percent }٪ - { $files } ملفات
+ui-analyze-to-populate = حلّل مشروعًا لعرض توزيع الملفات.
+ui-no-files-matched = لم تطابق أي ملفات قواعد الماسح.
+ui-readiness-compact = مطالبة مدمجة
+ui-readiness-review = مطالبة بحجم المراجعة
+ui-readiness-large = سياق كبير
+ui-insight-tokens-files = { $tokens } رمزًا تقديريًا عبر { $files } ملفات.
+ui-insight-split-active = تقسيم الإخراج مفعّل عند { $lines } أسطر لكل جزء من التقرير.
+ui-insight-split-suggest = اضبط تقسيم الإخراج قرب { $lines } أسطر لتقليل التقارير الضخمة.
+ui-insight-split-optional = تقسيم الإخراج اختياري لعدد الأسطر الحالي.
+ui-insight-top-file = { $path } أكبر مساهم في الرموز بـ { $tokens } رمزًا.
+ui-insight-top-extension = ملفات { $extension } تشكّل { $percent }٪ من الرموز التقديرية.
+ui-insight-gitignore-disabled = .gitignore معطّل، لذا قد تدخل الملفات المولَّدة أو المضمَّنة في الفحص.
+ui-no-skipped-files = لا توجد ملفات متجاهَلة.
+ui-no-saved-reports = لا توجد تقارير محفوظة بعد.
+ui-reveal-in-finder = إظهار في Finder
+ui-copy-path = نسخ المسار
+ui-error-copy-path = تعذّر نسخ مسار التقرير.
+ui-choose-recent-project = اختر مشروعًا أخيرًا
+ui-no-local-history = لا يوجد سجل محلي بعد.
+ui-history-tokens = { $tokens } رمزًا
+ui-not-analyzed = لم يُحلَّل
+ui-error-choose-folder-analyze = اختر مجلد مشروع قبل التحليل.
+ui-error-choose-folder-scan = اختر مجلد مشروع قبل تشغيل الفحص.
+ui-status-analyzed-files = تم تحليل { $count } ملفات
+ui-error-analyze = تعذّر تحليل هذا المشروع.
+ui-status-saved-reports = حُفظ { $count } ملف تقرير
+ui-error-scan = تعذّر تشغيل الفحص.
+ui-status-project-selected = تم اختيار المشروع
+ui-status-preset-applied = تم تطبيق الإعداد المسبق { $preset }
+ui-analyze-to-calculate-readiness = حلّل مشروعًا لحساب جاهزية المطالبة.
+ui-analyze-to-inspect-skipped = حلّل مشروعًا لفحص الملفات المتجاهَلة.
+ui-no-analysis-yet = لا تحليل بعد
+ui-zero-bytes = 0 B
+
+bash-banner =
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║                CODE PROJECT SCANNER                           ║
+    ╚═══════════════════════════════════════════════════════════════╝
+bash-processing =   📁 المعالجة: { $project }
+bash-detected-type =     🔍 النوع المكتشف: { $kind }
+bash-using-gitignore =     📋 استخدام .gitignore الخاص بالمشروع
+bash-error-generating-tree = خطأ في إنشاء الشجرة
+bash-files-found =     📊 الملفات الموجودة: { $count }
+bash-skipped-too-large = ⚠️  متجاهَل: كبير جدًا ({ $size } > { $max })
+bash-skipped-too-large-verbose = │ ⚠️  متجاهَل: كبير جدًا ({ $size } > { $max })
+bash-error-reading-file = [خطأ في قراءة الملف]
+bash-error-reading-file-verbose = │ [خطأ في قراءة الملف]
+bash-binary-omitted = [ملف ثنائي - محذوف]
+bash-binary-omitted-verbose = │ [ملف ثنائي - محذوف]
+bash-summary-skipped-gitignore =   📋 متجاهَل عبر .gitignore: { $count }
+bash-processed =     ✅ المُعالَج: { $count }
+bash-skipped =     ⏭️  المتجاهَل: { $count }
+bash-via-gitignore =     📋 عبر .gitignore: { $count }
+bash-size =     💾 الحجم: { $size }
+bash-configuration = 📍 الإعداد:
+bash-target-directory =    • المجلد المستهدف: { $path }
+bash-output-directory =    • مجلد الإخراج: { $path }
+bash-output-filename-suffix =    • لاحقة اسم ملف الإخراج: { $suffix }
+bash-max-file-size =    • الحد الأقصى لحجم الملف: { $size }
+bash-use-gitignore =    • استخدام .gitignore: { $value }
+bash-verbose-mode =    • الوضع التفصيلي: { $value }
+bash-extra-ignored-files =    • ملفات إضافية متجاهَلة: { $value }
+bash-extra-ignored-dirs =    • مجلدات إضافية متجاهَلة: { $value }
+bash-ignored-relative-paths =    • مسارات نسبية متجاهَلة: { $value }
+bash-ignored-absolute-paths =    • مسارات مطلقة متجاهَلة: { $value }
+bash-starting-scan = 🚀 بدء الفحص...
+bash-project-n = [المشروع { $count }]
+bash-saved =   💾 حُفظ: { $path }
+bash-no-subdirectories = ℹ️  لم يُعثر على مجلدات فرعية. معالجة { $path } كمشروع واحد...
+bash-done = ✨ تم!
+bash-total-projects =   📊 إجمالي المشاريع المُعالَجة: { $count }
+bash-files-generated-in =   📂 الملفات المُنشأة في: { $path }
+bash-generated-files = 📋 الملفات المُنشأة:
+bash-no-files-generated =   ⚠️  لم تُنشأ أي ملفات.
+bash-available-env = 💡 متغيرات البيئة المتاحة:
+bash-env-target-dir =    • TARGET_DIR - المجلد المستهدف للفحص
+bash-env-output-dir =    • OUTPUT_DIR - مجلد الإخراج
+bash-env-output-suffix =    • OUTPUT_FILE_SUFFIX - لاحقة اسم ملف الإخراج
+bash-env-max-size =    • MAX_SIZE_BYTES - الحد الأقصى لحجم الملف
+bash-env-use-gitignore =    • USE_GITIGNORE - استخدام .gitignore (true/false)
+bash-env-verbose =    • VERBOSE - الوضع التفصيلي (true/false)
+bash-env-ignore-files =    • IGNORE_FILES_EXTRA - ملفات إضافية للتجاهل (مفصولة بـ |)
+bash-env-ignore-dirs =    • IGNORE_DIRS_EXTRA - مجلدات إضافية للتجاهل (مفصولة بـ |)
+bash-env-ignore-paths =    • IGNORE_PATHS - مسارات نسبية محددة للتجاهل (مفصولة بـ |)
+bash-env-ignore-absolute =    • IGNORE_ABSOLUTE_PATHS - مسارات مطلقة محددة للتجاهل (مفصولة بـ |)
+bash-quick-examples = 📌 أمثلة سريعة:
+bash-default-dir-hint =    أضف المشاريع التي تريد فحصها داخل هذا المجلد ثم شغّل السكربت مجددًا.
+bash-error-target-not-found = ❌ خطأ: لم يُعثر على المجلد المستهدف في: { $path }
+bash-report-total-size =   💾 الحجم الإجمالي: { $size }
+
+cli-help-usage = الاستخدام:
+cli-help-options = الخيارات:
+cli-help-print-help = اطبع المساعدة
+cli-help-print-version = اطبع الإصدار

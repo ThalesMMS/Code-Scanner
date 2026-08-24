@@ -5,6 +5,7 @@ use code_scanner::scanner::{
     analyze_project as analyze_project_data, collect_loc_stats, process_project,
 };
 use code_scanner::utils::format_size;
+use code_scanner::{i18n, t};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tauri::{Manager, PhysicalPosition, PhysicalSize};
@@ -31,6 +32,7 @@ impl ScanOptions {
             verbose: self.verbose,
             ignore: self.ignore,
             max_output_lines: self.max_output_lines,
+            lang: None,
         }
     }
 }
@@ -146,7 +148,10 @@ fn run_scan(
     let output = PathBuf::from(&output_dir);
 
     if !input.is_dir() {
-        return Err(format!("Input folder does not exist: {input_dir}"));
+        return Err(t!(
+            "tauri-error-input-missing",
+            "path" => input_dir
+        ));
     }
     std::fs::create_dir_all(&output).map_err(|e| e.to_string())?;
 
@@ -171,7 +176,7 @@ fn run_scan(
 fn analyze_project(path: String, options: ScanOptions) -> Result<ProjectAnalysisDto, String> {
     let target = PathBuf::from(&path);
     if !target.is_dir() {
-        return Err(format!("Folder does not exist: {path}"));
+        return Err(t!("tauri-error-folder-missing", "path" => path));
     }
 
     let args = options.into_args(target.clone(), target.clone(), None);
@@ -267,7 +272,7 @@ fn analyze_project(path: String, options: ScanOptions) -> Result<ProjectAnalysis
 fn run_loc(path: String, options: ScanOptions) -> Result<LocStatsDto, String> {
     let target = PathBuf::from(&path);
     if !target.is_dir() {
-        return Err(format!("Folder does not exist: {path}"));
+        return Err(t!("tauri-error-folder-missing", "path" => path));
     }
 
     let args = options.into_args(target.clone(), target.clone(), Some(target.clone()));
@@ -289,6 +294,21 @@ fn run_loc(path: String, options: ScanOptions) -> Result<LocStatsDto, String> {
             })
             .collect(),
     })
+}
+
+#[tauri::command]
+fn i18n_catalogs() -> std::collections::BTreeMap<String, String> {
+    i18n::all_catalogs()
+}
+
+#[tauri::command]
+fn set_ui_locale(locale: Option<String>) {
+    i18n::init(locale.as_deref());
+}
+
+#[tauri::command]
+fn available_locales() -> Vec<String> {
+    i18n::available_locales()
 }
 
 fn fit_main_window_to_work_area(app: &tauri::App) -> tauri::Result<()> {
@@ -314,6 +334,7 @@ fn fit_main_window_to_work_area(app: &tauri::App) -> tauri::Result<()> {
 }
 
 fn main() {
+    i18n::init(None);
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -321,7 +342,14 @@ fn main() {
             fit_main_window_to_work_area(app)?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![run_scan, run_loc, analyze_project])
+        .invoke_handler(tauri::generate_handler![
+            run_scan,
+            run_loc,
+            analyze_project,
+            i18n_catalogs,
+            set_ui_locale,
+            available_locales
+        ])
         .run(tauri::generate_context!())
-        .expect("error while running the Code Scanner application");
+        .unwrap_or_else(|err| panic!("{}: {err}", t!("tauri-error-running-app")));
 }

@@ -14,6 +14,7 @@ fn args(no_gitignore: bool) -> Args {
         verbose: false,
         ignore: vec![],
         max_output_lines: None,
+        lang: None,
     }
 }
 
@@ -64,11 +65,11 @@ fn analysis_counts_skipped_files_by_reason() {
 
     assert_eq!(analysis.processed_files, 0);
     assert_eq!(analysis.skipped_files, 5);
-    assert_eq!(reasons["ignored file"], 1);
-    assert_eq!(reasons["ignored extension"], 1);
-    assert_eq!(reasons["binary file"], 1);
-    assert_eq!(reasons["unsupported extension"], 1);
-    assert_eq!(reasons["hidden file"], 1);
+    assert_eq!(reasons["skip-reason-ignored-file"], 1);
+    assert_eq!(reasons["skip-reason-ignored-extension"], 1);
+    assert_eq!(reasons["skip-reason-binary-file"], 1);
+    assert_eq!(reasons["skip-reason-unsupported-extension"], 1);
+    assert_eq!(reasons["skip-reason-hidden-file"], 1);
 }
 
 #[test]
@@ -126,9 +127,9 @@ fn analysis_applies_scanner_config() {
     assert_eq!(analysis.config.max_file_size, 4);
     assert_eq!(analysis.processed_files, 1);
     assert_eq!(analysis.largest_by_size[0].path, PathBuf::from("small.rs"));
-    assert_eq!(reasons["over max file size"], 1);
-    assert_eq!(reasons["unsupported extension"], 1);
-    assert_eq!(reasons["ignored extension"], 1);
+    assert_eq!(reasons["skip-reason-over-max-file-size"], 1);
+    assert_eq!(reasons["skip-reason-unsupported-extension"], 1);
+    assert_eq!(reasons["skip-reason-ignored-extension"], 1);
 }
 
 #[test]

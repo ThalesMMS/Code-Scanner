@@ -8,6 +8,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=i18n.sh
+. "$SCRIPT_DIR/i18n.sh"
 
 DEFAULT_INPUT_DIR="$REPO_ROOT/input"
 DEFAULT_OUTPUT_DIR="$REPO_ROOT/output"
@@ -153,14 +155,7 @@ get_size_bytes() {
 }
 
 format_bytes() {
-    local bytes=$1
-    if [ $bytes -lt 1024 ]; then
-        echo "${bytes}B"
-    elif [ $bytes -lt 1048576 ]; then
-        echo "$((bytes / 1024))KB"
-    else
-        echo "$((bytes / 1048576))MB"
-    fi
+    i18n_format_size "$1"
 }
 
 should_ignore_file() {
@@ -304,13 +299,13 @@ process_project() {
     local project_name="$2"
     local output_file="$3"
 
-    echo "  📁 Processing: $project_name"
+    echo "  $(i18n_t bash-processing "project=$project_name")"
 
     local project_type=$(detect_project_type "$project_dir")
-    echo "    🔍 Detected type: $project_type"
+    echo "    $(i18n_t bash-detected-type "kind=$project_type")"
 
     if [ -f "$project_dir/.gitignore" ] && [ "$USE_GITIGNORE" = "true" ]; then
-        echo "    📋 Using project's .gitignore"
+        echo "    $(i18n_t bash-using-gitignore)"
     fi
 
     : > "$output_file"
@@ -322,12 +317,12 @@ process_project() {
 
     {
         echo "$project_name"
-        echo "$(date '+%Y-%m-%d %H:%M:%S')"
+        echo "$(i18n_format_timestamp)"
         echo
-        echo "FOLDER STRUCTURE"
+        echo "$(i18n_t report-folder-structure)"
 
         if command -v tree >/dev/null 2>&1; then
-            tree -a -I "$IGNORE_DIRS_PATTERN|.DS_Store|._*" "$project_dir" 2>/dev/null || echo "Error generating tree"
+            tree -a -I "$IGNORE_DIRS_PATTERN|.DS_Store|._*" "$project_dir" 2>/dev/null || echo "$(i18n_t bash-error-generating-tree)"
         else
             IFS='|' read -ra IGN_LIST <<< "$IGNORE_DIRS_PATTERN"
             # head may trigger SIGPIPE under pipefail; ignore non-zero status
@@ -353,8 +348,8 @@ process_project() {
     fi
 
     {
-        echo "📄 FILE CONTENTS"
-        echo "═══════════════════════════════════════════════════════════════"
+        echo "$(i18n_t report-file-contents)"
+        echo "$(i18n_t report-contents-rule)"
         echo
     } >> "$output_file"
 
@@ -364,7 +359,7 @@ process_project() {
         \( -type d \( $(printf -- '-name %q -o ' "${IGN_LIST[@]}") -false \) -prune \) -o \
         -type f \( "${code_name_expr[@]}" \) -print 2>/dev/null | wc -l)
 
-    echo "    📊 Files found: $total_files"
+    echo "    $(i18n_t bash-files-found "count=$total_files")"
 
     find "$project_dir" \
         \( -type d \( $(printf -- '-name %q -o ' "${IGN_LIST[@]}") -false \) -prune \) -o \
@@ -396,16 +391,16 @@ process_project() {
             if [ "$SIZE_BYTES" -gt "$MAX_SIZE_BYTES" ]; then
                 if [ "$VERBOSE" = "true" ]; then
                     {
-                        echo "┌─────────────────────────────────────────────────────────────"
-                        echo "│ 📄 $RELATIVE_PATH"
-                        echo "│ ⚠️  SKIPPED: Too large ($SIZE_FORMATTED > $(format_bytes $MAX_SIZE_BYTES))"
-                        echo "└─────────────────────────────────────────────────────────────"
+                        echo "$(i18n_t report-file-rule-top)"
+                        echo "$(i18n_t report-file-name-verbose "path=$RELATIVE_PATH")"
+                        echo "$(i18n_t bash-skipped-too-large-verbose "size=$SIZE_FORMATTED" "max=$(format_bytes $MAX_SIZE_BYTES)")"
+                        echo "$(i18n_t report-file-rule-bottom)"
                         echo
                     } >> "$output_file"
                 else
                     {
-                        echo "📄 $RELATIVE_PATH"
-                        echo "⚠️  SKIPPED: Too large ($SIZE_FORMATTED > $(format_bytes $MAX_SIZE_BYTES))"
+                        echo "$(i18n_t report-file-name "path=$RELATIVE_PATH")"
+                        echo "$(i18n_t bash-skipped-too-large "size=$SIZE_FORMATTED" "max=$(format_bytes $MAX_SIZE_BYTES)")"
                         echo
                     } >> "$output_file"
                 fi
@@ -415,27 +410,27 @@ process_project() {
 
             if [ "$VERBOSE" = "true" ]; then
                 {
-                    echo "┌─────────────────────────────────────────────────────────────"
-                    echo "│ 📄 $RELATIVE_PATH"
-                    echo "│ 📊 Size: $SIZE_FORMATTED"
-                    echo "├─────────────────────────────────────────────────────────────"
+                    echo "$(i18n_t report-file-rule-top)"
+                    echo "$(i18n_t report-file-name-verbose "path=$RELATIVE_PATH")"
+                    echo "$(i18n_t report-file-size-verbose "size=$SIZE_FORMATTED")"
+                    echo "$(i18n_t report-file-rule-mid)"
 
                     if file "$filepath" 2>/dev/null | grep -q "text\\|ASCII\\|UTF"; then
-                        tr -d '\r' < "$filepath" 2>/dev/null | nl -ba -w4 -s' │ ' || echo "│ [Error reading file]"
+                        tr -d '\r' < "$filepath" 2>/dev/null | nl -ba -w4 -s' │ ' || echo "$(i18n_t bash-error-reading-file-verbose)"
                     else
-                        echo "│ [Binary file - omitted]"
+                        echo "$(i18n_t bash-binary-omitted-verbose)"
                     fi
 
-                    echo "└─────────────────────────────────────────────────────────────"
+                    echo "$(i18n_t report-file-rule-bottom)"
                     echo
                 } >> "$output_file"
             else
                 {
-                    echo "📄 $RELATIVE_PATH"
+                    echo "$(i18n_t report-file-name "path=$RELATIVE_PATH")"
                     if file "$filepath" 2>/dev/null | grep -q "text\\|ASCII\\|UTF"; then
-                        tr -d '\r' < "$filepath" 2>/dev/null || echo "[Error reading file]"
+                        tr -d '\r' < "$filepath" 2>/dev/null || echo "$(i18n_t bash-error-reading-file)"
                     else
-                        echo "[Binary file - omitted]"
+                        echo "$(i18n_t bash-binary-omitted)"
                     fi
                     echo
                 } >> "$output_file"
@@ -448,21 +443,21 @@ process_project() {
     if [ "$VERBOSE" = "true" ]; then
         {
             echo
-            echo "═══════════════════════════════════════════════════════════════"
-            echo "📊 SUMMARY"
-            echo "═══════════════════════════════════════════════════════════════"
-            echo "  ✅ Files processed: $file_count"
-            echo "  ⏭️  Files skipped: $skipped_count"
-            [ $gitignore_count -gt 0 ] && echo "  📋 Skipped via .gitignore: $gitignore_count"
-            echo "  💾 Total size: $(format_bytes $total_size)"
-            echo "═══════════════════════════════════════════════════════════════"
+            echo "$(i18n_t report-contents-rule)"
+            echo "$(i18n_t report-summary-title)"
+            echo "$(i18n_t report-contents-rule)"
+            echo "$(i18n_t cli-report-files-processed "count=$file_count")"
+            echo "$(i18n_t cli-loc-files-skipped "count=$skipped_count")"
+            [ $gitignore_count -gt 0 ] && echo "$(i18n_t bash-summary-skipped-gitignore "count=$gitignore_count")"
+            echo "$(i18n_t bash-report-total-size "size=$(format_bytes $total_size)")"
+            echo "$(i18n_t report-contents-rule)"
         } >> "$output_file"
     fi
 
-    echo "    ✅ Processed: $file_count"
-    echo "    ⏭️  Skipped: $skipped_count"
-    [ $gitignore_count -gt 0 ] && echo "    📋 Via .gitignore: $gitignore_count"
-    echo "    💾 Size: $(format_bytes $total_size)"
+    echo "    $(i18n_t bash-processed "count=$file_count")"
+    echo "    $(i18n_t bash-skipped "count=$skipped_count")"
+    [ $gitignore_count -gt 0 ] && echo "    $(i18n_t bash-via-gitignore "count=$gitignore_count")"
+    echo "    $(i18n_t bash-size "size=$(format_bytes $total_size)")"
 }
 
 ########################################
@@ -473,40 +468,38 @@ if [ -t 1 ] && [ -n "${TERM:-}" ] && command -v clear >/dev/null 2>&1; then
     clear
 fi
 
-echo "╔═══════════════════════════════════════════════════════════════╗"
-echo "║                CODE PROJECT SCANNER                           ║"
-echo "╚═══════════════════════════════════════════════════════════════╝"
+echo "$(i18n_t bash-banner)"
 echo
 
 if [ ! -d "$TARGET_DIR" ]; then
     if [ "$TARGET_DIR" = "$DEFAULT_INPUT_DIR" ]; then
         mkdir -p "$TARGET_DIR"
-        echo "ℹ️  The default input directory was created at: $TARGET_DIR"
-        echo "   Add the projects you want to scan inside this directory and run the script again."
+        echo "$(i18n_t cli-default-dir-created "path=$TARGET_DIR")"
+        echo "$(i18n_t bash-default-dir-hint)"
         exit 0
     fi
-    echo "❌ Error: Target directory not found at: $TARGET_DIR" >&2
+    echo "$(i18n_t bash-error-target-not-found "path=$TARGET_DIR")" >&2
     exit 1
 fi
 
 mkdir -p "$OUTPUT_DIR"
 
-echo "📍 Configuration:"
-echo "   • Target directory: $TARGET_DIR"
-echo "   • Output directory: $OUTPUT_DIR"
-echo "   • Output filename suffix: $OUTPUT_FILE_SUFFIX"
-echo "   • Max file size: $(format_bytes $MAX_SIZE_BYTES)"
-echo "   • Use .gitignore: $USE_GITIGNORE"
-echo "   • Verbose mode: $VERBOSE"
-[ -n "$IGNORE_FILES_EXTRA" ] && echo "   • Extra ignored files: $(echo "$IGNORE_FILES_EXTRA" | tr '|' ', ')"
-[ -n "$IGNORE_DIRS_EXTRA" ] && echo "   • Extra ignored directories: $(echo "$IGNORE_DIRS_EXTRA" | tr '|' ', ')"
-[ -n "$IGNORE_PATHS" ] && echo "   • Ignored relative paths: $(echo "$IGNORE_PATHS" | tr '|' ', ')"
-[ -n "$IGNORE_ABSOLUTE_PATHS" ] && echo "   • Ignored absolute paths: $(echo "$IGNORE_ABSOLUTE_PATHS" | tr '|' ', ')"
+echo "$(i18n_t bash-configuration)"
+echo "$(i18n_t bash-target-directory "path=$TARGET_DIR")"
+echo "$(i18n_t bash-output-directory "path=$OUTPUT_DIR")"
+echo "$(i18n_t bash-output-filename-suffix "suffix=$OUTPUT_FILE_SUFFIX")"
+echo "$(i18n_t bash-max-file-size "size=$(format_bytes $MAX_SIZE_BYTES)")"
+echo "$(i18n_t bash-use-gitignore "value=$USE_GITIGNORE")"
+echo "$(i18n_t bash-verbose-mode "value=$VERBOSE")"
+[ -n "$IGNORE_FILES_EXTRA" ] && echo "$(i18n_t bash-extra-ignored-files "value=$(echo "$IGNORE_FILES_EXTRA" | tr '|' ', ')")"
+[ -n "$IGNORE_DIRS_EXTRA" ] && echo "$(i18n_t bash-extra-ignored-dirs "value=$(echo "$IGNORE_DIRS_EXTRA" | tr '|' ', ')")"
+[ -n "$IGNORE_PATHS" ] && echo "$(i18n_t bash-ignored-relative-paths "value=$(echo "$IGNORE_PATHS" | tr '|' ', ')")"
+[ -n "$IGNORE_ABSOLUTE_PATHS" ] && echo "$(i18n_t bash-ignored-absolute-paths "value=$(echo "$IGNORE_ABSOLUTE_PATHS" | tr '|' ', ')")"
 
 echo
-echo "═══════════════════════════════════════════════════════════════"
-echo "🚀 Starting scan..."
-echo "═══════════════════════════════════════════════════════════════"
+echo "$(i18n_t report-contents-rule)"
+echo "$(i18n_t bash-starting-scan)"
+echo "$(i18n_t report-contents-rule)"
 
 project_count=0
 
@@ -515,51 +508,52 @@ for project_path in "$TARGET_DIR"/*; do
         project_name=$(basename "$project_path")
         output_file="$OUTPUT_DIR/${project_name}${OUTPUT_FILE_SUFFIX}"
 
-        echo "[Project $((++project_count))]"
+        project_count=$((project_count + 1))
+        echo "$(i18n_t bash-project-n "count=$project_count")"
         process_project "$project_path" "$project_name" "$output_file"
-        echo "  💾 Saved: $output_file"
+        echo "$(i18n_t bash-saved "path=$output_file")"
         echo
     fi
 done
 
 if [ $project_count -eq 0 ]; then
-    echo "ℹ️  No subdirectories found. Processing $TARGET_DIR as a single project..."
+    echo "$(i18n_t bash-no-subdirectories "path=$TARGET_DIR")"
     echo
 
     project_name=$(basename "$TARGET_DIR")
     output_file="$OUTPUT_DIR/${project_name}${OUTPUT_FILE_SUFFIX}"
 
     process_project "$TARGET_DIR" "$project_name" "$output_file"
-    echo "  💾 Saved: $output_file"
+    echo "$(i18n_t bash-saved "path=$output_file")"
 fi
 
 echo
-echo "═══════════════════════════════════════════════════════════════"
-echo "✨ DONE!"
-echo "═══════════════════════════════════════════════════════════════"
-echo "  📊 Total projects processed: $project_count"
-echo "  📂 Files generated in: $OUTPUT_DIR"
-echo "═══════════════════════════════════════════════════════════════"
+echo "$(i18n_t report-contents-rule)"
+echo "$(i18n_t bash-done)"
+echo "$(i18n_t report-contents-rule)"
+echo "$(i18n_t bash-total-projects "count=$project_count")"
+echo "$(i18n_t bash-files-generated-in "path=$OUTPUT_DIR")"
+echo "$(i18n_t report-contents-rule)"
 echo
 
-echo "📋 Generated files:"
-ls -lh "$OUTPUT_DIR"/*${OUTPUT_FILE_SUFFIX} 2>/dev/null || echo "  ⚠️  No files generated."
+echo "$(i18n_t bash-generated-files)"
+ls -lh "$OUTPUT_DIR"/*${OUTPUT_FILE_SUFFIX} 2>/dev/null || echo "$(i18n_t bash-no-files-generated)"
 echo
 
-echo "💡 Available environment variables:"
-echo "   • TARGET_DIR - Target directory to scan"
-echo "   • OUTPUT_DIR - Output directory"
-echo "   • OUTPUT_FILE_SUFFIX - Output filename suffix"
-echo "   • MAX_SIZE_BYTES - Max file size"
-echo "   • USE_GITIGNORE - Use .gitignore (true/false)"
-echo "   • VERBOSE - Verbose mode (true/false)"
-echo "   • IGNORE_FILES_EXTRA - Additional files to ignore (pipe-separated)"
-echo "   • IGNORE_DIRS_EXTRA - Additional directories to ignore (pipe-separated)"
-echo "   • IGNORE_PATHS - Specific relative paths to ignore (pipe-separated)"
-echo "   • IGNORE_ABSOLUTE_PATHS - Specific absolute paths to ignore (pipe-separated)"
+echo "$(i18n_t bash-available-env)"
+echo "$(i18n_t bash-env-target-dir)"
+echo "$(i18n_t bash-env-output-dir)"
+echo "$(i18n_t bash-env-output-suffix)"
+echo "$(i18n_t bash-env-max-size)"
+echo "$(i18n_t bash-env-use-gitignore)"
+echo "$(i18n_t bash-env-verbose)"
+echo "$(i18n_t bash-env-ignore-files)"
+echo "$(i18n_t bash-env-ignore-dirs)"
+echo "$(i18n_t bash-env-ignore-paths)"
+echo "$(i18n_t bash-env-ignore-absolute)"
 echo
 
-echo "📌 Quick examples:"
+echo "$(i18n_t bash-quick-examples)"
 echo "   IGNORE_ABSOLUTE_PATHS=\"$PWD/input/vendor/symfony|$PWD/input/libs/huge\" ./bash/scan_project.sh"
 echo "   IGNORE_PATHS=\"src/vendor/large-lib|tests/fixtures/big-data\" ./bash/scan_project.sh"
 echo "   USE_GITIGNORE=false VERBOSE=true TARGET_DIR=./custom OUTPUT_DIR=./reports ./bash/scan_project.sh"
